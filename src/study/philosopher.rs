@@ -1,5 +1,3 @@
-use std::env;
-use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -27,7 +25,7 @@ impl Philosopher {
         }
     }
 
-    fn eat(&self, table: &Table) {
+    pub fn eat(&self, table: &Table) {
         log::trace!("({}) hold no fork.",line!());
         let _left = table.forks[self.left].lock().unwrap();
         log::trace!("({}) hold left fork.",line!());
@@ -40,9 +38,10 @@ impl Philosopher {
     }
 }
 
-
 #[test]
-fn a() {
+fn main() {
+    use std::env;
+    use std::sync::Arc;
     env::set_var("RUST_LOG", "trace");
     env_logger::init();
     let table = Arc::new(Table {

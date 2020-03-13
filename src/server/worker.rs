@@ -2,9 +2,7 @@ use std::io::prelude::*;
 use std::net::{Shutdown, TcpStream};
 use std::sync::Arc;
 
-use chrono::Local;
-
-use crate::http::http_status::{HttpStatus, not_found};
+use crate::http::http_status::not_found;
 use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
@@ -23,20 +21,20 @@ impl Worker {
 
     pub fn handle(&self, mut _stream: TcpStream) -> std::io::Result<()> {
         let b = Box::new(_stream);
-        let mut reader = b.try_clone().unwrap();
+        let mut reader = b.try_clone()?;
         let mut writer = b.try_clone().unwrap();
-        let mut stream = b.try_clone().unwrap();
+        let stream = b.try_clone().unwrap();
         //
-        self.handle_read_writer(&mut reader, &mut writer);
+        self.handle_read_writer(&mut reader, &mut writer)?;
         //終わり
         writer.flush().unwrap();
-        stream.shutdown(Shutdown::Both);
+        stream.shutdown(Shutdown::Both).unwrap();
         //reader.shutdown(Shutdown::Both);
         log::trace!("shutdown stream");
         return Ok(());
     }
 
-    fn handle_read_writer(&self,reader: &mut Read, writer: &mut Write) -> std::io::Result<()> {
+    fn handle_read_writer(&self, reader: &mut Read, writer: &mut Write) -> std::io::Result<()> {
         let request = read_http_request(reader);
         if request.is_err() {}
         let request = request.unwrap();
@@ -44,21 +42,21 @@ impl Worker {
 
         if relay.is_none() {
             println!("not found relay connection {}", request.http_first_line.uri);
-            not_found(writer);
+            not_found(writer).unwrap();
             return Ok(());
         }
         let relay = relay.unwrap();
         println!("relay connection host is {}:{}", relay.host, relay.port);
         //
-        let bRelay = std::rc::Rc::new(relay).clone();
-        let bRequest = std::rc::Rc::new(request).clone();
-        let mut upstream = Upstream::new(bRelay, bRequest).unwrap();
+        let b_relay = std::rc::Rc::new(relay).clone();
+        let b_request = std::rc::Rc::new(request).clone();
+        let mut upstream = Upstream::new(b_relay, b_request).unwrap();
 
-        upstream.sendFirstLine();
+        upstream.send_first_line();
         log::trace!("upstream.sendFirstLine()");
-        upstream.sendHeader();
+        upstream.send_headers();
         log::trace!("upstream.sendHeader()");
-        upstream.sendBody(reader);
+        upstream.send_body(reader);
         log::trace!("upstream.sendBody(reader);");
         upstream.flush();
         log::trace!("upstream.flush();");
@@ -66,13 +64,13 @@ impl Worker {
         log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
         let downstream = Downstream::new(response_info);
         log::trace!("let downstream = Downstream::new(response_info);");
-        downstream.sendFirstLine(writer);
+        downstream.send_first_line(writer);
         log::trace!("downstream.sendFirstLine(writer);");
-        downstream.sendHeaders(writer);
+        downstream.send_headers(writer);
         log::trace!("downstream.sendHeaders(writer);");
-        downstream.sendBody(&mut upstream.stream, writer);
+        downstream.send_body(&mut upstream.stream, writer);
         log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
-        writer.flush();
+        writer.flush().unwrap();
         log::trace!("writer.flush();");
         return Ok(());
     }

@@ -1,15 +1,10 @@
-use std::borrow::Borrow;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::rc::Rc;
 
-
-
-use crate::io::read_line;
 use crate::server::config::RelayConnectionInfo;
-use crate::server::http_request::{HttpRequestInfo, read_http_request};
-use crate::server::http_response::{HttpResponseFirstLine, HttpResponseHeader, HttpResponseInfo, read_header};
-use std::time::Duration;
+use crate::server::http_request::HttpRequestInfo;
+use crate::server::http_response::HttpResponseInfo;
 
 pub struct Upstream {
     relay: Rc<RelayConnectionInfo>,
@@ -32,28 +27,28 @@ impl Upstream {
         return Some(upstream);
     }
 
-    pub fn sendFirstLine(&self) {
+    pub fn send_first_line(&self) {
         let mut stream = &self.stream;
-        stream.write(self.request.http_first_line.method.as_bytes());
-        stream.write(b" ");
-        stream.write(self.request.http_first_line.uri.as_bytes());
-        stream.write(b" ");
-        stream.write(self.request.http_first_line.protoolVersion.as_bytes());
-        stream.write(b"\r\n");
+        stream.write(self.request.http_first_line.method.as_bytes()).unwrap();
+        stream.write(b" ").unwrap();
+        stream.write(self.request.http_first_line.uri.as_bytes()).unwrap();
+        stream.write(b" ").unwrap();
+        stream.write(self.request.http_first_line.protool_version.as_bytes()).unwrap();
+        stream.write(b"\r\n").unwrap();
 
         log::trace!("{}", self.request.http_first_line.method);
         log::trace!("{}", self.request.http_first_line.uri);
-        log::trace!("{}", self.request.http_first_line.protoolVersion);
+        log::trace!("{}", self.request.http_first_line.protool_version);
     }
 
-    pub fn sendHeader(&self) {
+    pub fn send_headers(&self) {
         let mut stream = &self.stream;
         //Host
         println!("send host {}", self.relay.host.is_empty());
         if self.relay.host.is_empty() == false {
-            stream.write(b"Host: ");
-            stream.write(self.relay.host.as_bytes());
-            stream.write(b"\r\n");
+            stream.write(b"Host: ").unwrap();
+            stream.write(self.relay.host.as_bytes()).unwrap();
+            stream.write(b"\r\n").unwrap();
             println!("end send host.")
         }
         let a = self.request.clone();
@@ -61,25 +56,25 @@ impl Upstream {
         //Connection
         if request.http_request_header.keep_alive {}
         if request.http_request_header.content_length > 0 {
-            stream.write(b"Content-Length: ");
-            stream.write(request.http_request_header.content_length.to_string().as_bytes());
-            stream.write(b"\r\n");
+            stream.write(b"Content-Length: ").unwrap();
+            stream.write(request.http_request_header.content_length.to_string().as_bytes()).unwrap();
+            stream.write(b"\r\n").unwrap();
         }
         //ヘッダー
         let headers = &a.http_request_header.headers;
         for header in headers {
             let name = &header.name;
             let value = &header.value;
-            stream.write(name.as_bytes());
-            stream.write(b": ");
-            stream.write(value.as_bytes());
-            stream.write(b"\r\n");
+            stream.write(name.as_bytes()).unwrap();
+            stream.write(b": ").unwrap();
+            stream.write(value.as_bytes()).unwrap();
+            stream.write(b"\r\n").unwrap();
         }
-        stream.write(b"\r\n");
+        stream.write(b"\r\n").unwrap();
         log::trace!("end send header.")
     }
 
-    pub fn sendBody(&self, reader: &mut Read) {
+    pub fn send_body(&self, reader: &mut Read) {
         let mut unsend_data_length = self.request.http_request_header.content_length;
         let mut buf = [0; 4096];
         while unsend_data_length > 0 {
@@ -95,11 +90,11 @@ impl Upstream {
 
     pub fn send(&self, buf: &[u8]) {
         let mut stream = &self.stream;
-        stream.write(buf);
+        stream.write(buf).unwrap();
     }
     pub fn flush(&self) {
         let mut stream = &self.stream;
-        stream.flush();
+        stream.flush().unwrap();
     }
 
 

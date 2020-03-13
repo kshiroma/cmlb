@@ -1,12 +1,4 @@
-use std::env;
-use std::net::TcpListener;
-
-use chrono::Duration;
-use log::{debug, error, info, LevelFilter, warn};
-
-use crate::routing_sample::createSampleConfig;
 use crate::server::config::ServerConfig;
-
 pub mod config;
 pub mod http_request;
 pub mod http_response;
@@ -28,10 +20,10 @@ pub fn listen(config: ServerConfig, port: i32) -> std::io::Result<()> {
             }
         };
         std::thread::spawn(move || -> std::io::Result<()> {
-            debug!("worker start");
+            log::debug!("worker start");
             let worker = worker::Worker::new(rc0);
             let result = worker.handle(stream);
-            debug!("worker end.");
+            log::debug!("worker end.");
             return result;
         });
     }
@@ -40,8 +32,8 @@ pub fn listen(config: ServerConfig, port: i32) -> std::io::Result<()> {
 
 #[test]
 fn test() {
-    log::set_max_level(LevelFilter::Trace);
-    let config = createSampleConfig();
-    listen(config, 80);
+    use crate::routing_sample::create_sample_config;
+    let config = create_sample_config();
+    listen(config, 80).unwrap();
 }
 

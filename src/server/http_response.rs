@@ -26,14 +26,14 @@ pub struct HttpResponseFirstLine {
 }
 
 impl HttpResponseFirstLine {
-    pub fn new(firstLine: String) -> Self {
-        let mut array = firstLine.split_whitespace();
+    pub fn new(first_line: String) -> Self {
+        let mut array = first_line.split_whitespace();
 
         HttpResponseFirstLine {
             protocol_version: String::from(array.next().unwrap_or_default()),
             http_status_code: String::from(array.next().unwrap()).parse().unwrap(),
             http_status: String::from(array.next().unwrap_or_default()),
-            resonse: firstLine,
+            resonse: first_line,
         }
     }
 }
@@ -54,20 +54,19 @@ impl HttpResponseHeader {
         });
     }
 
-    pub fn new(headerLines: Vec<String>) -> std::io::Result<Self> {
+    pub fn new(header_lines: Vec<String>) -> std::io::Result<Self> {
         let mut e = HttpResponseHeader::empty()?;
-        for line in headerLines {
+        for line in header_lines {
             e.add_string(line)?;
         }
         return Ok(e);
-        ;
     }
 
-    pub fn add_string(&mut self, headerLine: String) -> std::io::Result<()> {
-        if headerLine.is_empty() {
+    pub fn add_string(&mut self, header_line: String) -> std::io::Result<()> {
+        if header_line.is_empty() {
             return Ok(());
         }
-        let header = parse(headerLine).expect("Bad Request");
+        let header = parse(header_line).expect("Bad Request");
         if header.name.eq_ignore_ascii_case("Content-Length") {
             self.content_length = header.value.parse().unwrap_or(-1);
         } else if header.name.eq_ignore_ascii_case("Connection") {
@@ -86,19 +85,19 @@ pub fn read_header(reader: &mut Read) -> std::io::Result<HttpResponseHeader> {
         if line.is_empty() {
             break;
         }
-        headers.add_string(line);
+        headers.add_string(line)?;
     }
     return Ok(headers);
 }
 
 pub fn read_http_response_info(read: &mut Read) -> std::io::Result<HttpResponseInfo> {
-    let firstString = read_line(read);
-    let str = firstString.clone();
-    let firstLine = HttpResponseFirstLine::new(firstString);
+    let first_string = read_line(read);
+    let str = first_string.clone();
+    let first_line = HttpResponseFirstLine::new(first_string);
     println!("begin read response header of {}", str);
     let headers = read_header(read).unwrap();
 
-    return Ok(HttpResponseInfo::new(firstLine, headers));
+    return Ok(HttpResponseInfo::new(first_line, headers));
 }
 //#[test]
 //pub fn test_read_http_reponse() {

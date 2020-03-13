@@ -1,12 +1,6 @@
-use std::borrow::Borrow;
-use std::io::Read;
 use std::net::TcpStream;
-use std::ops::Deref;
-use std::panic::resume_unwind;
 
-use regex::Regex;
-
-use crate::server::http_request::{HttpRequestFirstLine, HttpRequestHeader, HttpRequestInfo, read_http_request};
+use crate::server::http_request::HttpRequestInfo;
 
 pub struct RoutingRule {
     name: String,
@@ -52,24 +46,24 @@ impl RoutingRule {
 }
 
 pub struct ServerConfig {
-    routingRules: Vec<RoutingRule>,
+    routing_rules: Vec<RoutingRule>,
 }
 
 impl ServerConfig {
     pub fn new() -> Self {
         let vec: Vec<RoutingRule> = Vec::new();
         ServerConfig {
-            routingRules: vec
+            routing_rules: vec
         }
     }
 
     pub fn add(&mut self, rule: RoutingRule) {
-        self.routingRules.push(rule);
+        self.routing_rules.push(rule);
     }
 
-    fn findRoutingRule(&self, request: &HttpRequestInfo) -> Option<&RoutingRule> {
-        for rule in self.routingRules.iter() {
-            if let Some(r) = (rule.routing_rule)(request) {
+    pub fn find_routing_rule(&self, request: &HttpRequestInfo) -> Option<&RoutingRule> {
+        for rule in self.routing_rules.iter() {
+            if let Some(_) = (rule.routing_rule)(request) {
                 return Some(rule);
             }
         }
@@ -77,7 +71,7 @@ impl ServerConfig {
     }
 
     pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-        for rule in self.routingRules.iter() {
+        for rule in self.routing_rules.iter() {
             println!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(request) {
                 return Some(r);

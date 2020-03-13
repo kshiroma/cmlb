@@ -1,6 +1,5 @@
 use std::io;
 use std::io::prelude::*;
-use std::ops::Deref;
 
 use crate::io::*;
 
@@ -12,10 +11,10 @@ pub struct HttpRequestInfo {
 }
 
 impl HttpRequestInfo {
-    fn new(firstLineString: HttpRequestFirstLine, headerLines: HttpRequestHeader) -> Self {
+    fn new(first_line_string: HttpRequestFirstLine, header_lines: HttpRequestHeader) -> Self {
         HttpRequestInfo {
-            http_first_line: firstLineString,
-            http_request_header: headerLines,
+            http_first_line: first_line_string,
+            http_request_header: header_lines,
         }
     }
 }
@@ -23,20 +22,20 @@ impl HttpRequestInfo {
 pub struct HttpRequestFirstLine {
     pub method: String,
     pub uri: String,
-    pub protoolVersion: String,
+    pub protool_version: String,
     pub request: String,
 }
 
 
 impl HttpRequestFirstLine {
-    pub fn new(firstLine: String) -> Self {
-        let mut array = firstLine.split_whitespace();
+    pub fn new(first_line: String) -> Self {
+        let mut array = first_line.split_whitespace();
 
         HttpRequestFirstLine {
             method: String::from(array.next().unwrap()),
             uri: String::from(array.next().unwrap()),
-            protoolVersion: String::from(array.next().unwrap()),
-            request: firstLine,
+            protool_version: String::from(array.next().unwrap()),
+            request: first_line,
         }
     }
 }
@@ -61,19 +60,19 @@ impl HttpRequestHeader {
         });
     }
 
-    pub fn new(headerLines: Vec<String>) -> std::io::Result<Self> {
+    pub fn new(header_lines: Vec<String>) -> std::io::Result<Self> {
         let mut e = HttpRequestHeader::empty()?;
-        for line in headerLines {
+        for line in header_lines {
             e.add_string(line)?;
         }
         return Ok(e);
     }
 
-    pub fn add_string(&mut self, headerLine: String) -> std::io::Result<()> {
-        if headerLine.is_empty() {
+    pub fn add_string(&mut self, header_line: String) -> std::io::Result<()> {
+        if header_line.is_empty() {
             return Ok(());
         }
-        let header = parse(headerLine).expect("Bad_Request");
+        let header = parse(header_line).expect("Bad_Request");
         if header.name.eq_ignore_ascii_case("Host") {
             self.host = header.value;
         } else if header.name.eq_ignore_ascii_case("Content-Length") {
@@ -90,12 +89,12 @@ impl HttpRequestHeader {
 }
 
 pub fn read_http_request(reader: &mut Read) -> io::Result<HttpRequestInfo> {
-    let firstLineString = read_line(reader);
-    let firstLine = HttpRequestFirstLine::new(firstLineString);
+    let first_line_string = read_line(reader);
+    let first_line = HttpRequestFirstLine::new(first_line_string);
     println!("{}", "begin read header");
     let headers = read_header(reader).unwrap();
     println!("read {} headers", headers.headers.len());
-    return Ok((HttpRequestInfo::new(firstLine, headers)));
+    return Ok(HttpRequestInfo::new(first_line, headers));
 }
 
 pub fn read_header(reader: &mut Read) -> std::io::Result<HttpRequestHeader> {
@@ -105,14 +104,14 @@ pub fn read_header(reader: &mut Read) -> std::io::Result<HttpRequestHeader> {
         if line.is_empty() {
             break;
         }
-        headers.add_string(line);
+        headers.add_string(line)?;
     }
     return Ok(headers);
 }
 
 
 #[test]
-fn test_HttpRequestRequestHeadr() {
+fn test_http_request_request_header() {
     let vec = vec![
         "Host: localhost".to_string(),
         "User-Agent: curl/7.55.1".to_string(),
@@ -129,7 +128,7 @@ fn test_HttpRequestRequestHeadr() {
 }
 
 #[test]
-fn test_readFirstLine() -> std::io::Result<()> {
+fn test_read_first_line() -> std::io::Result<()> {
     use std::fs;
     use std::fs::File;
 //use std::io::Read;
@@ -137,8 +136,8 @@ fn test_readFirstLine() -> std::io::Result<()> {
     let _string = fs::read_to_string(path).unwrap();
 
     let mut reader = File::open(path).unwrap();
-    let firstLine = read_line(&mut reader);
-    assert_eq!(firstLine, "POST /bbb/ddd HTTP/1.1");
+    let first_line = read_line(&mut reader);
+    assert_eq!(first_line, "POST /bbb/ddd HTTP/1.1");
 
     //let headers = read_header(&mut reader);
 

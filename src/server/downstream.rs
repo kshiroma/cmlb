@@ -1,8 +1,4 @@
-use std::fmt::Pointer;
-use std::fs::read;
 use std::io::prelude::*;
-use std::net::TcpStream;
-use std::rc::Rc;
 
 use crate::server::http_response::HttpResponseInfo;
 
@@ -19,38 +15,38 @@ impl Downstream {
         return downstream;
     }
 
-    pub fn sendFirstLine(&self, writer: &mut Write) {
-        writer.write(self.response.http_first_line.protocol_version.as_bytes());
-        writer.write(b" ");
-        writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes());
-        writer.write(b" ");
-        writer.write(self.response.http_first_line.http_status.as_bytes());
-        writer.write(b"\r\n");
+    pub fn send_first_line(&self, writer: &mut Write) {
+        writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
+        writer.write(b" ").unwrap();
+        writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes()).unwrap();
+        writer.write(b" ").unwrap();
+        writer.write(self.response.http_first_line.http_status.as_bytes()).unwrap();
+        writer.write(b"\r\n").unwrap();
     }
 
-    pub fn sendHeaders(&self, writer: &mut Write) {
+    pub fn send_headers(&self, writer: &mut Write) {
         //if self.response.http_response_header.keep_alive {}
-        writer.write(b"Connection: close");
-        writer.write(b"\r\n");
+        writer.write(b"Connection: close").unwrap();
+        writer.write(b"\r\n").unwrap();
         if self.response.http_response_header.content_length > 0 {
-            writer.write(b"Content-Length: ");
-            writer.write(self.response.http_response_header.content_length.to_string().as_bytes());
-            writer.write(b"\r\n");
+            writer.write(b"Content-Length: ").unwrap();
+            writer.write(self.response.http_response_header.content_length.to_string().as_bytes()).unwrap();
+            writer.write(b"\r\n").unwrap();
         }
         let response = &self.response;
         for header in &response.http_response_header.headers {
             let name = &header.name;
             let value = &header.value;
-            writer.write(name.as_bytes());
-            writer.write(b": ");
-            writer.write(value.as_bytes());
-            writer.write(b"\r\n");
+            writer.write(name.as_bytes()).unwrap();
+            writer.write(b": ").unwrap();
+            writer.write(value.as_bytes()).unwrap();
+            writer.write(b"\r\n").unwrap();
         }
-        writer.write(b"\r\n");
+        writer.write(b"\r\n").unwrap();
         log::trace!("end send response header.")
     }
 
-    pub fn sendBody(&self, reader: &mut Read, writer: &mut Write) {
+    pub fn send_body(&self, reader: &mut Read, writer: &mut Write) {
         log::trace!("start sendBody");
         let data_length = self.response.http_response_header.content_length;
         log::trace!("let data_length = self.response.http_response_header.content_length;");
@@ -64,7 +60,7 @@ impl Downstream {
                 let size = reader.read(&mut buf).unwrap();
                 let d = size.to_string();
                 let read_length: i64 = d.parse().unwrap();
-                writer.write(&buf[0..size]);
+                writer.write(&buf[0..size]).unwrap();
                 log::trace!("response {} data",String::from_utf8_lossy(&buf[0..31]));
                 unsent_data_length = unsent_data_length - read_length;
                 log::trace!("unsent_data_length is {}",unsent_data_length);
@@ -75,20 +71,20 @@ impl Downstream {
         } else {
             let mut sent_data_length = 0;
             log::trace!("enter data_length = 0");
-            let mut zeroResponseCount = 0;
+            //let mut zero_reesponse_count = 0;
             loop {
                 log::trace!("reader.read(&mut buf).unwrap()");
                 let size = reader.read(&mut buf).unwrap();
                 if size == 0 {
-                    zeroResponseCount += 1;
+                    //zero_reesponse_count += 1;
                     break;
                 }
                 let d = size.to_string();
                 let data_length: i64 = d.parse().unwrap();
-                writer.write(&buf[0..size]);
+                writer.write(&buf[0..size]).unwrap();
                 log::trace!("response data_length = 0 :{} {} ",d,&buf[size-1]);
                 sent_data_length = sent_data_length + data_length;
-                writer.flush();
+                writer.flush().unwrap();
             }
         }
     }

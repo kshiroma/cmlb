@@ -1,4 +1,3 @@
-use crate::server::http_request::read_http_request;
 use chrono::Local;
 use std::io::Write;
 
@@ -37,7 +36,7 @@ impl HttpStatus {
             HttpStatus::ServiceUnavailable => (503, "Service Unavailable"),
             HttpStatus::GatewayTimeout => (504, "Gateway Timeout"),
             HttpStatus::HTTPVersionNotSupported => (505, "HTTP Version Not Supported"),
-            _ => return None
+            //_ => return None
         };
         Some(HttpStatusEntry {
             code,
@@ -64,7 +63,7 @@ pub fn not_found(writer: &mut Write) -> std::io::Result<()> {
     write!(writer, "Content-Length: {}", length)?;
     write!(writer, "\r\n")?;
     write!(writer, "\r\n")?;
-    writer.write(buf);
-    write!(writer, "\r\n");
+    writer.write(buf)?;
+    write!(writer, "\r\n")?;
     return Ok(());
 }

@@ -1,9 +1,14 @@
 extern crate rand;
 extern crate regex;
 
-use crate::routing_sample::createSampleConfig;
+use std::env;
 
-pub mod study;
+use env_logger;
+//use log::{debug, error, info, warn};
+
+use crate::routing_sample::create_sample_config;
+
+//pub mod study;
 pub mod http;
 pub mod server;
 //pub mod study;
@@ -11,11 +16,7 @@ pub mod io;
 pub mod routing_sample;
 
 
-use log::{error, warn, info, debug};
-use std::env;
-use env_logger;
 fn main() {
-
     env::set_var("RUST_LOG", "trace");
     env_logger::init();
     log::info!("info");
@@ -24,6 +25,6 @@ fn main() {
     log::error!("error");
     log::trace!("trace");
 
-    let config = createSampleConfig();
-    server::listen(config, 80);
+    let config = create_sample_config();
+    server::listen(config, 80).unwrap();
 }
