@@ -1,7 +1,11 @@
+use std::env;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
+
+use env_logger;
+use log::{debug, error, info, warn};
 
 struct Philosopher {
     name: String,
@@ -24,31 +28,23 @@ impl Philosopher {
     }
 
     fn eat(&self, table: &Table) {
-        //println!("{} begin.", self.name);
+        log::trace!("({}) hold no fork.",line!());
         let _left = table.forks[self.left].lock().unwrap();
-        //thread::sleep(Duration::from_millis(1500));
+        log::trace!("({}) hold left fork.",line!());
         let _right = table.forks[self.right].lock().unwrap();
+        log::trace!("({}) hold right fork.",line!());
 
-        println!("{} is eating.", self.name);
+        log::info!("{},{} is eating.", file!(),self.name);
         thread::sleep(Duration::from_millis(100));
-        println!("{} is done eating", self.name);
-    }
-
-
-    fn eat2(&self, table: Table) {
-        let _left = table.forks[self.left].lock().unwrap();
-        thread::sleep(Duration::from_millis(150));
-        let _right = table.forks[self.right].lock().unwrap();
-
-        println!("{} is eating.", self.name);
-        thread::sleep(Duration::from_millis(10));
-        println!("{} is done eating", self.name);
+        log::info!("{},{} is done eating",file!(), self.name);
     }
 }
 
 
 #[test]
 fn a() {
+    env::set_var("RUST_LOG", "trace");
+    env_logger::init();
     let table = Arc::new(Table {
         forks: vec![
             Mutex::new(()),

@@ -19,10 +19,8 @@ pub fn createSampleConfig() -> ServerConfig {
 
 
 pub fn routing1(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let re = Regex::new(r"^/cattleya/.*").unwrap();
-    let mut path = "none";
-    let relay = if re.is_match(&request.http_first_line.uri) {
-        path = "/cattleya";
+    let path = "/cattleya";
+    let relay = if request.http_first_line.uri.starts_with(path) {
         Some(RelayConnectionInfo {
             host: "localhost".to_string(),
             port: 8000,
@@ -31,47 +29,22 @@ pub fn routing1(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     } else {
         None
     };
-    print("routing1", request, &path);
     return relay;
 }
 
 pub fn routing2(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let re = Regex::new(r"^/bbb/.*").unwrap();
-    let mut path = "none";
-    let relay = if re.is_match(&request.http_first_line.uri) {
-        path = "/ccc/ddd";
+    let username = std::env::var_os("USERNAME").map(|s| s.into_string()).unwrap().unwrap();
+    let path = "/shiroma_zenrou-s2";
+    log::trace!("{} {}",request.http_first_line.uri,path);
+    let relay = if request.http_first_line.uri.starts_with(path) {
         Some(RelayConnectionInfo {
             host: "localhost".to_string(),
-            port: 8001,
+            port: 8083,
             path: path.to_string(),
         })
     } else {
         None
     };
-    print("routing2", request, path);
-
-    return relay;
-}
-
-fn print(name: &str, request: &HttpRequestInfo, path: &str) {
-    println!(" checking {} ... {} ,{}", name, request.http_first_line.request, path);
-}
-
-pub fn routing3(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let re = Regex::new(r"^/s2cattleya/.*").unwrap();
-    let mut path = "none";
-    let username = std::env::var_os("USERNAME").unwrap().to_str().unwrap();
-    let relay = if re.is_match(&request.http_first_line.uri) {
-        path = "/cattleya";
-        Some(RelayConnectionInfo {
-            host: "localhost".to_string(),
-            port: 8000,
-            path: path.to_string(),
-        })
-    } else {
-        None
-    };
-    print("routing1", request, &path);
     return relay;
 }
 
@@ -124,5 +97,4 @@ fn test_get_address() {
 
 
 #[test]
-fn test_get_user_name() {
-}
+fn test_get_user_name() {}

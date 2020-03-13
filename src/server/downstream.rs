@@ -29,7 +29,9 @@ impl Downstream {
     }
 
     pub fn sendHeaders(&self, writer: &mut Write) {
-        if self.response.http_response_header.keep_alive {}
+        //if self.response.http_response_header.keep_alive {}
+        writer.write(b"Connection: close");
+        writer.write(b"\r\n");
         if self.response.http_response_header.content_length > 0 {
             writer.write(b"Content-Length: ");
             writer.write(self.response.http_response_header.content_length.to_string().as_bytes());
@@ -71,22 +73,22 @@ impl Downstream {
             //何もしない
             log::trace!("response nothing");
         } else {
-            let mut send_data_length = 0;
+            let mut sent_data_length = 0;
             log::trace!("enter data_length = 0");
+            let mut zeroResponseCount = 0;
             loop {
                 log::trace!("reader.read(&mut buf).unwrap()");
-                //let size = reader.read(&mut buf).unwrap();
                 let size = reader.read(&mut buf).unwrap();
+                if size == 0 {
+                    zeroResponseCount += 1;
+                    break;
+                }
                 let d = size.to_string();
                 let data_length: i64 = d.parse().unwrap();
                 writer.write(&buf[0..size]);
-                log::trace!("response data_length = 0 :{} ",&buf[size-1]);
-                send_data_length = send_data_length + data_length;
+                log::trace!("response data_length = 0 :{} {} ",d,&buf[size-1]);
+                sent_data_length = sent_data_length + data_length;
                 writer.flush();
-                send_data_length = 0;
-                if size != buf.len() && buf[size - 1] == 10 {
-                    break;
-                }
             }
         }
     }

@@ -15,8 +15,7 @@ use log::{error, warn, info, debug};
 use std::env;
 use env_logger;
 fn main() {
-    //log::set_max_level(LevelFilter::Trace);
-    //log::log_enabled!(true);
+
     env::set_var("RUST_LOG", "trace");
     env_logger::init();
     log::info!("info");
@@ -24,7 +23,6 @@ fn main() {
     log::debug!("debug");
     log::error!("error");
     log::trace!("trace");
-
 
     let config = createSampleConfig();
     server::listen(config, 80);
