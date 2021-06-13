@@ -14,13 +14,15 @@ pub fn guess() {
         let mut guess = String::new();
         io::stdin().read_line(&mut guess).expect("Failed to read line");
         println!("You guessed: {}", guess);
+        guess.trim().parse() ;
+
         let guess: u32 = match guess.trim().parse() {
             Ok(num) => num,
             Err(_) => continue
         };
 
         //.expect("Please type a number!");
-        match guess.cmp(&secret_number) {
+        match guess.cmpare(&secret_number) {
             Ordering::Less => println!("Too small!"),
             Ordering::Greater => println!("Too big"),
             Ordering::Equal => {

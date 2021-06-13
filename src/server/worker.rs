@@ -35,18 +35,15 @@ impl Worker {
     }
 
     fn handle_read_writer(&self, reader: &mut Read, writer: &mut Write) -> std::io::Result<()> {
-        let request = read_http_request(reader);
-        if request.is_err() {}
-        let request = request.unwrap();
+        let request = read_http_request(reader)?;
         let relay: Option<RelayConnectionInfo> = self.config.route(&request);
-
         if relay.is_none() {
-            println!("not found relay connection {}", request.http_first_line.uri);
+            log::info!("not found relay connection {}", request.http_first_line.uri);
             not_found(writer).unwrap();
             return Ok(());
         }
         let relay = relay.unwrap();
-        println!("relay connection host is {}:{}", relay.host, relay.port);
+        log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //
         let b_relay = std::rc::Rc::new(relay).clone();
         let b_request = std::rc::Rc::new(request).clone();

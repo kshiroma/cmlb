@@ -19,7 +19,7 @@ struct Table {
 impl Philosopher {
     fn new(name: &str, left: usize, right: usize) -> Philosopher {
         Philosopher {
-            name: name.to_string(),
+            name: name,
             left: left,
             right: right,
         }

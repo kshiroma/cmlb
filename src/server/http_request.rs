@@ -91,9 +91,9 @@ impl HttpRequestHeader {
 pub fn read_http_request(reader: &mut Read) -> io::Result<HttpRequestInfo> {
     let first_line_string = read_line(reader);
     let first_line = HttpRequestFirstLine::new(first_line_string);
-    println!("{}", "begin read header");
+    log::trace!("{}", "begin read header");
     let headers = read_header(reader).unwrap();
-    println!("read {} headers", headers.headers.len());
+    log::trace!("read {} headers", headers.headers.len());
     return Ok(HttpRequestInfo::new(first_line, headers));
 }
 
@@ -122,6 +122,9 @@ fn test_http_request_request_header() {
         "Content-Type: aaa:bbb".to_string(),
     ];
     let header = HttpRequestHeader::new(vec).unwrap();
+    let mut a = "".to_string();
+    a.push_str("aaa");
+
     println!("HOST : {} ", header.host);
     println!("KeepAlive: {} ", header.keep_alive);
     println!("content_length: {} ", header.content_length);

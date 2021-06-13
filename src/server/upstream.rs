@@ -44,12 +44,12 @@ impl Upstream {
     pub fn send_headers(&self) {
         let mut stream = &self.stream;
         //Host
-        println!("send host {}", self.relay.host.is_empty());
+        log::trace!("send host {}", self.relay.host.is_empty());
         if self.relay.host.is_empty() == false {
             stream.write(b"Host: ").unwrap();
             stream.write(self.relay.host.as_bytes()).unwrap();
             stream.write(b"\r\n").unwrap();
-            println!("end send host.")
+            log::trace!("end send host.")
         }
         let a = self.request.clone();
         let request = &a;

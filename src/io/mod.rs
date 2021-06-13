@@ -6,7 +6,7 @@ pub fn read_line(reader: &mut Read) -> String {
         let mut data = [0; 1];
         let mut prev_is_cr = false;
         let _ = reader.read(&mut data).unwrap_or(2);
-        let a = data[0];
+        let a:u8 = data[0];
         if a == b'\n' {
             break;
         }
@@ -36,3 +36,9 @@ fn test_read_first_line() {
     assert_eq!(first_line, "GET /favicon.ico HTTP/1.1");
 }
 
+
+#[test]
+fn test() {
+    let aaa = "aaa".to_string();
+    println!("{}",aaa);
+}
