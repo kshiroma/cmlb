@@ -16,7 +16,7 @@ mod downstream;
 
 pub fn listen(config: ServerConfig, port: i32) -> std::io::Result<()> {
     let rc = std::sync::Arc::new(config);
-    let listener = std::net::TcpListener::bind(format!("127.0.0.1:{}", port))?;
+    let listener = std::net::TcpListener::bind(format!("0.0.0.0:{}", port))?;
     //listener.set_nonblocking(true);
     for stream in listener.incoming() {
         let rc0 = rc.clone();

@@ -2,14 +2,12 @@ use std::borrow::Borrow;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::rc::Rc;
-
-
+use std::time::Duration;
 
 use crate::io::read_line;
 use crate::server::config::RelayConnectionInfo;
 use crate::server::http_request::{HttpRequestInfo, read_http_request};
 use crate::server::http_response::{HttpResponseFirstLine, HttpResponseHeader, HttpResponseInfo, read_header};
-use std::time::Duration;
 
 pub struct Upstream {
     relay: Rc<RelayConnectionInfo>,
@@ -48,16 +46,18 @@ impl Upstream {
 
     pub fn sendHeader(&self) {
         let mut stream = &self.stream;
-        //Host
-        println!("send host {}", self.relay.host.is_empty());
-        if self.relay.host.is_empty() == false {
-            stream.write(b"Host: ");
-            stream.write(self.relay.host.as_bytes());
-            stream.write(b"\r\n");
-            println!("end send host.")
-        }
         let a = self.request.clone();
         let request = &a;
+
+        //Host
+        if self.relay.host.is_empty() == false {
+            stream.write(b"Host: ");
+            //stream.write(self.relay.host.as_bytes());
+            stream.write(request.http_request_header.host.as_bytes());
+            stream.write(b"\r\n");
+            log::debug!("host:{}",request.http_request_header.host);
+            log::trace!("end send host.")
+        }
         //Connection
         if request.http_request_header.keep_alive {}
         if request.http_request_header.content_length > 0 {
@@ -108,3 +108,5 @@ impl Upstream {
         return crate::server::http_response::read_http_response_info(&mut read);
     }
 }
+
+

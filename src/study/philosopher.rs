@@ -27,7 +27,7 @@ impl Philosopher {
         }
     }
 
-    fn eat(&self, table: &Table) {
+    fn eat(self, table: &Table) {
         log::trace!("({}) hold no fork.",line!());
         let _left = table.forks[self.left].lock().unwrap();
         log::trace!("({}) hold left fork.",line!());

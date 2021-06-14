@@ -75,6 +75,10 @@ impl HttpRequestHeader {
         }
         let header = parse(headerLine).expect("Bad_Request");
         if header.name.eq_ignore_ascii_case("Host") {
+            if(self.host.is_empty()){
+                self.host = header.value;
+            }
+        } else if header.name.eq_ignore_ascii_case("X-Forwarded-Host") {
             self.host = header.value;
         } else if header.name.eq_ignore_ascii_case("Content-Length") {
             self.content_length = header.value.parse().unwrap_or(-1);
@@ -115,6 +119,7 @@ pub fn read_header(reader: &mut Read) -> std::io::Result<HttpRequestHeader> {
 fn test_HttpRequestRequestHeadr() {
     let vec = vec![
         "Host: localhost".to_string(),
+        "X-Forwarded-Host: locallocalh".to_string(),
         "User-Agent: curl/7.55.1".to_string(),
         "Accept: */*".to_string(),
         "Content-Length: 7".to_string(),

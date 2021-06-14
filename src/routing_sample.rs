@@ -4,27 +4,38 @@ use std::net::{Ipv4Addr, TcpStream};
 
 use regex::Regex;
 
+use crate::http::http_header::HttpHeaderEntry;
 use crate::server::config::{RelayConnectionInfo, RoutingRule, ServerConfig};
 use crate::server::http_request::HttpRequestInfo;
 
 pub fn createSampleConfig() -> ServerConfig {
-    let routeingRule1 = RoutingRule::new("routing1".to_string(), routing1);
-    let routeingRule2 = RoutingRule::new("routing2".to_string(), routing2);
     let mut config = ServerConfig::new();
-    config.add(routeingRule1);
-    config.add(routeingRule2);
-
+    //config.add(RoutingRule::new("odj".to_string(), routing_odj));
+    //config.add(RoutingRule::new("wakuden".to_string(), routing_wakuden));
+    //config.add(RoutingRule::new("timer".to_string(), routing_timer));
+    config.add(RoutingRule::new("md".to_string(), routing_milliondollar));
     return config;
 }
 
+fn routing_odj(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    routing("odj", request)
+}
 
-pub fn routing1(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+fn routing_wakuden(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    routing("wakuden", request)
+}
+
+fn routing(prefix: &str, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
-    let relay = if request.http_first_line.uri.starts_with(path) {
+    let host = &request.http_request_header.host;
+    let pattern = prefix.to_string() + ".";
+    let pattern = pattern.as_str();
+    let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
+    let relay = if host.starts_with(pattern) {
         Some(RelayConnectionInfo {
-            host: "localhost".to_string(),
+            host: "dev-jt0001".to_string(),
             port: 8000,
-            path: path.to_string(),
+            path: path.to_string() + conjunction + "targetUser=" + prefix,
         })
     } else {
         None
@@ -32,21 +43,45 @@ pub fn routing1(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     return relay;
 }
 
-pub fn routing2(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let username = std::env::var_os("USERNAME").map(|s| s.into_string()).unwrap().unwrap();
-    let path = "/shiroma_zenrou-s2";
-    log::trace!("{} {}",request.http_first_line.uri,path);
-    let relay = if request.http_first_line.uri.starts_with(path) {
+fn routing_milliondollar(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    let prefix: &str = "million-dollar";
+
+    let host = &request.http_request_header.host;
+    let pattern = prefix.to_string() + ".";
+    let pattern = pattern.as_str();
+    let conjunction: &str = &request.http_first_line.uri;
+    let relay = if host.starts_with(pattern) {
         Some(RelayConnectionInfo {
             host: "localhost".to_string(),
-            port: 8083,
-            path: path.to_string(),
+            port: 1234,
+            path: "".to_string() + conjunction,
         })
     } else {
         None
     };
     return relay;
 }
+
+
+fn routing_timer(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    let prefix: &str = "timer";
+    let path = "/cattleya";
+    let host = &request.http_request_header.host;
+    let pattern = prefix.to_string() + ".";
+    let pattern = pattern.as_str();
+    let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
+    let relay = if host.starts_with(pattern) {
+        Some(RelayConnectionInfo {
+            host: "dev-timer".to_string(),
+            port: 8000,
+            path: path.to_string() + conjunction + "targetUser=" + prefix,
+        })
+    } else {
+        None
+    };
+    return relay;
+}
+
 
 #[test]
 fn test() {
