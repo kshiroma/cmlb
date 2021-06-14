@@ -42,7 +42,10 @@ impl Downstream {
             writer.write(value.as_bytes()).unwrap();
             writer.write(b"\r\n").unwrap();
         }
-        writer.write(b"\r\n").unwrap();
+        writer.write(b"X-CMLB: cmlb");
+        writer.write(b"\r\n");
+
+        writer.write(b"\r\n");
         log::trace!("end send response header.")
     }
 

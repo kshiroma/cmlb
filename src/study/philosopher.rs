@@ -63,7 +63,7 @@ fn main() {
     ];
 
 
-    let handles: Vec<_> = philosophers.into_iter().map(|p| {
+    let handles: Vec<_> = philosophers .into_iter().map(|p| {
         let table = table.clone();
         thread::spawn(move || { p.eat(&table); })
     }).collect();
