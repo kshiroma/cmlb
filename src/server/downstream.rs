@@ -1,15 +1,15 @@
 use std::io::prelude::*;
 
-use crate::server::http_response::HttpResponseInfo;
+use crate::server::http_response::http_response_info;
 
-pub struct Downstream {
-    response: HttpResponseInfo,
+pub struct downstream {
+    response: http_response_info,
     //writer: Rc<Write>,
 }
 
-impl Downstream {
-    pub fn new(response: HttpResponseInfo) -> Self {
-        let downstream = Downstream {
+impl downstream {
+    pub fn new(response: http_response_info) -> Self {
+        let downstream = downstream {
             response
         };
         return downstream;
@@ -42,10 +42,10 @@ impl Downstream {
             writer.write(value.as_bytes()).unwrap();
             writer.write(b"\r\n").unwrap();
         }
-        writer.write(b"X-CMLB: cmlb");
-        writer.write(b"\r\n");
+        writer.write(b"X-CMLB: cmlb").unwrap();
+        writer.write(b"\r\n").unwrap();
 
-        writer.write(b"\r\n");
+        writer.write(b"\r\n").unwrap();
         log::trace!("end send response header.")
     }
 

@@ -4,12 +4,9 @@ extern crate regex;
 use std::env;
 
 use env_logger;
-
-use crate::routing_sample::create_sample_config;
-
 use log::{debug, error, info, warn};
 
-use crate::routing_sample::createSampleConfig;
+use crate::routing_sample::create_sample_config;
 
 //pub mod study;
 pub mod http;
@@ -28,18 +25,18 @@ fn main() {
 //    log::error!("error");
 //    log::trace!("trace");
 
-    let config = createSampleConfig();
+    let config = create_sample_config();
     server::listen(config, 80).unwrap();
 }
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::mpsc;
-use std::thread;
-use std::ops::Deref;
 
-static NTHREADS: i32 = 30;
 
 #[test]
-fn test(){
+fn test() {
+    use std::sync::mpsc::{Receiver, Sender};
+    use std::sync::mpsc;
+    use std::thread;
+
+    const NTHREADS: i32 = 30;
     let (tx, tr): (Sender<i32>, Receiver<i32>) = mpsc::channel();
 
 
@@ -47,7 +44,7 @@ fn test(){
     for id in 0..NTHREADS {
         let thread_tx = tx.clone();
         let child = thread::spawn(move || {
-            thread_tx.send(id);
+            thread_tx.send(id).unwrap();
             log::info!("thread {} finished", id);
         });
         children.push(child);
@@ -65,9 +62,9 @@ fn test(){
 }
 
 #[test]
-fn aho(){
+fn aho() {
     let mut guess = "aaabbb".to_string();
-    let a = &guess;
+    //let a = &guess;
     //guess.remove(1);//moveして
     //a.remove(1);
     //guess = a ;
@@ -75,7 +72,7 @@ fn aho(){
     guess.remove(1);
     //guess.remove(1);
     //a.remove(1);
-    println!("{}",guess);//ここではエラー
+    println!("{}", guess);//ここではエラー
     //println!("{}",a);
 
     //println!("{}",a);

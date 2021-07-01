@@ -1,19 +1,19 @@
 use std::net::TcpStream;
 
-use crate::server::http_request::HttpRequestInfo;
+use crate::server::http_request::http_request_info;
 
-pub struct RoutingRule {
+pub struct routing_rule {
     name: String,
-    routing_rule: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo>,
+    routing_rule: fn(&http_request_info) -> Option<relay_connection_info>,
 }
 
-pub struct RelayConnectionInfo {
+pub struct relay_connection_info {
     pub host: String,
     pub port: i32,
     pub path: String,
 }
 
-impl RelayConnectionInfo {
+impl relay_connection_info {
     pub fn get_address(&self) -> String {
         let mut host = (&self.host).to_string();
         let port = &self.port;
@@ -31,37 +31,37 @@ impl RelayConnectionInfo {
     }
 }
 
-impl RoutingRule {
-    pub fn new(name: String, routing_rule: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
-        RoutingRule {
+impl routing_rule {
+    pub fn new(name: String, routing_rule: fn(&http_request_info) -> Option<relay_connection_info>) -> Self {
+        routing_rule {
             name,
             routing_rule,
         }
     }
 
-    pub fn route(&self, requet: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-        let func: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo> = self.routing_rule;
+    pub fn route(&self, requet: &http_request_info) -> Option<relay_connection_info> {
+        let func: fn(&http_request_info) -> Option<relay_connection_info> = self.routing_rule;
         return func(requet);
     }
 }
 
-pub struct ServerConfig {
-    routing_rules: Vec<RoutingRule>,
+pub struct server_config {
+    routing_rules: Vec<routing_rule>,
 }
 
-impl ServerConfig {
+impl server_config {
     pub fn new() -> Self {
-        let vec: Vec<RoutingRule> = Vec::new();
-        ServerConfig {
+        let vec: Vec<routing_rule> = Vec::new();
+        server_config {
             routing_rules: vec
         }
     }
 
-    pub fn add(&mut self, rule: RoutingRule) {
+    pub fn add(&mut self, rule: routing_rule) {
         self.routing_rules.push(rule);
     }
 
-    pub fn find_routing_rule(&self, request: &HttpRequestInfo) -> Option<&RoutingRule> {
+    pub fn find_routing_rule(&self, request: &http_request_info) -> Option<&routing_rule> {
         for rule in self.routing_rules.iter() {
             if let Some(_) = (rule.routing_rule)(request) {
                 return Some(rule);
@@ -70,9 +70,9 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    pub fn route(&self, request: &http_request_info) -> Option<relay_connection_info> {
         for rule in self.routing_rules.iter() {
-            println!("checking {}", rule.name);
+            log::trace!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(request) {
                 return Some(r);
             }

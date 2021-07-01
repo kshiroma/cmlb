@@ -3,17 +3,17 @@ use std::net::{Shutdown, TcpStream};
 use std::sync::Arc;
 
 use crate::http::http_status::not_found;
-use crate::server::config::{RelayConnectionInfo, ServerConfig};
-use crate::server::downstream::Downstream;
+use crate::server::config::{relay_connection_info, server_config};
+use crate::server::downstream::downstream;
 use crate::server::http_request::read_http_request;
 use crate::server::upstream::Upstream;
 
 pub struct Worker {
-    config: Arc<ServerConfig>,
+    config: Arc<server_config>,
 }
 
 impl Worker {
-    pub fn new(config: Arc<ServerConfig>) -> Self {
+    pub fn new(config: Arc<server_config>) -> Self {
         Worker {
             config,
         }
@@ -36,7 +36,7 @@ impl Worker {
 
     fn handle_read_writer(&self, reader: &mut Read, writer: &mut Write) -> std::io::Result<()> {
         let request = read_http_request(reader)?;
-        let relay: Option<RelayConnectionInfo> = self.config.route(&request);
+        let relay: Option<relay_connection_info> = self.config.route(&request);
         if relay.is_none() {
             log::info!("not found relay connection {}", request.http_first_line.uri);
             not_found(writer).unwrap();
@@ -59,7 +59,7 @@ impl Worker {
         log::trace!("upstream.flush();");
         let response_info = upstream.read_http_response_info().unwrap();
         log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
-        let downstream = Downstream::new(response_info);
+        let downstream = downstream::new(response_info);
         log::trace!("let downstream = Downstream::new(response_info);");
         downstream.send_first_line(writer);
         log::trace!("downstream.sendFirstLine(writer);");

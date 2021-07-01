@@ -3,23 +3,23 @@ use std::io::prelude::*;
 
 use crate::io::*;
 
-use crate::http::http_header::{parse, HttpHeaderEntry};
+use crate::http::http_header::{parse, http_header_entry};
 
-pub struct HttpRequestInfo {
-    pub http_first_line: HttpRequestFirstLine,
-    pub http_request_header: HttpRequestHeader,
+pub struct http_request_info {
+    pub http_first_line: http_request_first_line,
+    pub http_request_header: http_request_header,
 }
 
-impl HttpRequestInfo {
-    fn new(first_line_string: HttpRequestFirstLine, header_lines: HttpRequestHeader) -> Self {
-        HttpRequestInfo {
+impl http_request_info {
+    fn new(first_line_string: http_request_first_line, header_lines: http_request_header) -> Self {
+        http_request_info {
             http_first_line: first_line_string,
             http_request_header: header_lines,
         }
     }
 }
 
-pub struct HttpRequestFirstLine {
+pub struct http_request_first_line {
     pub method: String,
     pub uri: String,
     pub protool_version: String,
@@ -27,11 +27,11 @@ pub struct HttpRequestFirstLine {
 }
 
 
-impl HttpRequestFirstLine {
+impl http_request_first_line {
     pub fn new(first_line: String) -> Self {
         let mut array = first_line.split_whitespace();
 
-        HttpRequestFirstLine {
+        http_request_first_line {
             method: String::from(array.next().unwrap()),
             uri: String::from(array.next().unwrap()),
             protool_version: String::from(array.next().unwrap()),
@@ -41,18 +41,18 @@ impl HttpRequestFirstLine {
 }
 
 
-pub struct HttpRequestHeader {
+pub struct http_request_header {
     pub host: String,
     pub content_length: i64,
     pub keep_alive: bool,
-    pub headers: Vec<HttpHeaderEntry>,
+    pub headers: Vec<http_header_entry>,
 }
 
 
-impl HttpRequestHeader {
+impl http_request_header {
     pub fn empty() -> std::io::Result<Self> {
-        let headers0: Vec<HttpHeaderEntry> = Vec::new();
-        return Ok(HttpRequestHeader {
+        let headers0: Vec<http_header_entry> = Vec::new();
+        return Ok(http_request_header {
             host: "".to_string(),
             content_length: -1,
             keep_alive: false,
@@ -61,7 +61,7 @@ impl HttpRequestHeader {
     }
 
     pub fn new(header_lines: Vec<String>) -> std::io::Result<Self> {
-        let mut e = HttpRequestHeader::empty()?;
+        let mut e = http_request_header::empty()?;
         for line in header_lines {
             e.add_string(line)?;
         }
@@ -92,17 +92,17 @@ impl HttpRequestHeader {
     }
 }
 
-pub fn read_http_request(reader: &mut Read) -> io::Result<HttpRequestInfo> {
+pub fn read_http_request(reader: &mut Read) -> io::Result<http_request_info> {
     let first_line_string = read_line(reader);
-    let first_line = HttpRequestFirstLine::new(first_line_string);
+    let first_line = http_request_first_line::new(first_line_string);
     log::trace!("{}", "begin read header");
     let headers = read_header(reader).unwrap();
     log::trace!("read {} headers", headers.headers.len());
-    return Ok(HttpRequestInfo::new(first_line, headers));
+    return Ok(http_request_info::new(first_line, headers));
 }
 
-pub fn read_header(reader: &mut Read) -> std::io::Result<HttpRequestHeader> {
-    let mut headers: HttpRequestHeader = HttpRequestHeader::empty()?;
+pub fn read_header(reader: &mut Read) -> std::io::Result<http_request_header> {
+    let mut headers: http_request_header = http_request_header::empty()?;
     loop {
         let line = read_line(reader);
         if line.is_empty() {
@@ -126,7 +126,7 @@ fn test_http_request_request_header() {
         "Content-Type: application/x-www-form-urlencoded".to_string(),
         "Content-Type: aaa:bbb".to_string(),
     ];
-    let header = HttpRequestHeader::new(vec).unwrap();
+    let header = http_request_header::new(vec).unwrap();
     let mut a = "".to_string();
     a.push_str("aaa");
 
