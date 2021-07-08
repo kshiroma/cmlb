@@ -52,7 +52,7 @@ fn test() {
     println!("{}", HttpStatus::BadRequest.get_as_string().unwrap());
 }
 
-pub fn not_found(writer: &mut Write) -> std::io::Result<()> {
+pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     let status = HttpStatus::NotFound;
     let code = status.get().unwrap();
     let string = status.get_as_string().unwrap();

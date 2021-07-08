@@ -1,21 +1,22 @@
 use std::io::prelude::*;
 
-use crate::server::http_response::http_response_info;
+use crate::server::http_response::HttpResponseInfo;
+//use std::borrow::Borrow;
 
-pub struct downstream {
-    response: http_response_info,
+pub struct Downstream {
+    response: HttpResponseInfo,
     //writer: Rc<Write>,
 }
 
-impl downstream {
-    pub fn new(response: http_response_info) -> Self {
-        let downstream = downstream {
+impl Downstream {
+    pub fn new(response: HttpResponseInfo) -> Self {
+        let downstream = Downstream {
             response
         };
         return downstream;
     }
 
-    pub fn send_first_line(&self, writer: &mut Write) {
+    pub fn send_first_line0(&self, mut writer: Box<dyn Write>) {
         writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
         writer.write(b" ").unwrap();
         writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes()).unwrap();
@@ -24,7 +25,17 @@ impl downstream {
         writer.write(b"\r\n").unwrap();
     }
 
-    pub fn send_headers(&self, writer: &mut Write) {
+
+    pub fn send_first_line(&self, writer: &mut dyn Write) {
+        writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
+        writer.write(b" ").unwrap();
+        writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes()).unwrap();
+        writer.write(b" ").unwrap();
+        writer.write(self.response.http_first_line.http_status.as_bytes()).unwrap();
+        writer.write(b"\r\n").unwrap();
+    }
+
+    pub fn send_headers(&self, writer: &mut dyn Write) {
         //if self.response.http_response_header.keep_alive {}
         writer.write(b"Connection: close").unwrap();
         writer.write(b"\r\n").unwrap();
@@ -49,8 +60,8 @@ impl downstream {
         log::trace!("end send response header.")
     }
 
-    pub fn send_body(&self, reader: &mut Read, writer: &mut Write) {
-        log::trace!("start sendBody");
+    pub fn send_body(&self, reader: &mut dyn Read, writer: &mut dyn Write) {
+        log::trace!("start send_body");
         let data_length = self.response.http_response_header.content_length;
         log::trace!("let data_length = self.response.http_response_header.content_length;");
         let mut buf = [0; 4096];

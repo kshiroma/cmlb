@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 
-pub fn read_line(reader: &mut Read) -> String {
+pub fn read_line(reader: &mut dyn Read) -> String {
     let mut line: Vec<u8> = Vec::new();
     loop {
         let mut data = [0; 1];

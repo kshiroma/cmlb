@@ -1,16 +1,16 @@
 use std::io::Read;
 
-use crate::http::http_header::{http_header_entry, parse};
+use crate::http::http_header::{HttpHeaderEntry, parse};
 use crate::io::read_line;
 
-pub struct http_response_info {
-    pub http_first_line: http_response_first_line,
-    pub http_response_header: http_response_header,
+pub struct HttpResponseInfo {
+    pub http_first_line: HttpResponseFirstLine,
+    pub http_response_header: HttpResponseHeader,
 }
 
-impl http_response_info {
-    pub fn new(http_first_line: http_response_first_line, http_response_header: http_response_header) -> Self {
-        http_response_info {
+impl HttpResponseInfo {
+    pub fn new(http_first_line: HttpResponseFirstLine, http_response_header: HttpResponseHeader) -> Self {
+        HttpResponseInfo {
             http_first_line,
             http_response_header,
         }
@@ -18,18 +18,18 @@ impl http_response_info {
 }
 
 
-pub struct http_response_first_line {
+pub struct HttpResponseFirstLine {
     pub protocol_version: String,
     pub http_status_code: i32,
     pub http_status: String,
     pub resonse: String,
 }
 
-impl http_response_first_line {
+impl HttpResponseFirstLine {
     pub fn new(first_line: String) -> Self {
         let mut array = first_line.split_whitespace();
 
-        http_response_first_line {
+        HttpResponseFirstLine {
             protocol_version: String::from(array.next().unwrap_or_default()),
             http_status_code: String::from(array.next().unwrap()).parse().unwrap(),
             http_status: String::from(array.next().unwrap_or_default()),
@@ -38,16 +38,16 @@ impl http_response_first_line {
     }
 }
 
-pub struct http_response_header {
+pub struct HttpResponseHeader {
     pub content_length: i64,
-    pub headers: Vec<http_header_entry>,
+    pub headers: Vec<HttpHeaderEntry>,
     pub keep_alive: bool,
 }
 
-impl http_response_header {
+impl HttpResponseHeader {
     pub fn empty() -> std::io::Result<Self> {
-        let headers0: Vec<http_header_entry> = Vec::new();
-        return Ok(http_response_header {
+        let headers0: Vec<HttpHeaderEntry> = Vec::new();
+        return Ok(HttpResponseHeader {
             content_length: -1,
             headers: headers0,
             keep_alive: false,
@@ -55,7 +55,7 @@ impl http_response_header {
     }
 
     pub fn new(header_lines: Vec<String>) -> std::io::Result<Self> {
-        let mut e = http_response_header::empty()?;
+        let mut e = HttpResponseHeader::empty()?;
         for line in header_lines {
             e.add_string(line)?;
         }
@@ -78,8 +78,8 @@ impl http_response_header {
     }
 }
 
-pub fn read_header(reader: &mut Read) -> std::io::Result<http_response_header> {
-    let mut headers: http_response_header = http_response_header::empty()?;
+pub fn read_header(reader: &mut dyn Read) -> std::io::Result<HttpResponseHeader> {
+    let mut headers: HttpResponseHeader = HttpResponseHeader::empty()?;
     loop {
         let line = read_line(reader);
         if line.is_empty() {
@@ -90,14 +90,14 @@ pub fn read_header(reader: &mut Read) -> std::io::Result<http_response_header> {
     return Ok(headers);
 }
 
-pub fn read_http_response_info(read: &mut Read) -> std::io::Result<http_response_info> {
+pub fn read_http_response_info(read: &mut dyn Read) -> std::io::Result<HttpResponseInfo> {
     let first_string = read_line(read);
     let str = first_string.clone();
-    let first_line = http_response_first_line::new(first_string);
+    let first_line = HttpResponseFirstLine::new(first_string);
     println!("begin read response header of {}", str);
     let headers = read_header(read).unwrap();
 
-    return Ok(http_response_info::new(first_line, headers));
+    return Ok(HttpResponseInfo::new(first_line, headers));
 }
 //#[test]
 //pub fn test_read_http_reponse() {

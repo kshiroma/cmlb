@@ -1,4 +1,4 @@
-use crate::server::config::server_config;
+use crate::server::config::ServerConfig;
 pub mod config;
 pub mod http_request;
 pub mod http_response;
@@ -6,7 +6,7 @@ mod worker;
 mod upstream;
 mod downstream;
 
-pub fn listen(config: server_config, port: i32) -> std::io::Result<()> {
+pub fn listen(config: ServerConfig, port: i32) -> std::io::Result<()> {
     let rc = std::sync::Arc::new(config);
     let listener = std::net::TcpListener::bind(format!("0.0.0.0:{}", port))?;
     //listener.set_nonblocking(true);

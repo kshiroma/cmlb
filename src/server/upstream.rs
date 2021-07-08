@@ -1,21 +1,20 @@
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::rc::Rc;
-use std::time::Duration;
 
-use crate::io::read_line;
-use crate::server::config::relay_connection_info;
-use crate::server::http_request::{http_request_info, read_http_request};
-use crate::server::http_response::{http_response_first_line, http_response_header, http_response_info, read_header};
+//use crate::io::read_line;
+use crate::server::config::RelayConnectionInfo;
+use crate::server::http_request::HttpRequestInfo;
+use crate::server::http_response::HttpResponseInfo;
 
 pub struct Upstream {
-    relay: Rc<relay_connection_info>,
-    request: Rc<http_request_info>,
+    relay: Rc<RelayConnectionInfo>,
+    request: Rc<HttpRequestInfo>,
     pub stream: TcpStream,
 }
 
 impl Upstream {
-    pub fn new(relay: Rc<relay_connection_info>, request: Rc<http_request_info>) -> Option<Upstream> {
+    pub fn new(relay: Rc<RelayConnectionInfo>, request: Rc<HttpRequestInfo>) -> Option<Upstream> {
         let result: std::io::Result<TcpStream> = relay.connect_relay();
         if result.is_err() {
             return None;
@@ -78,7 +77,7 @@ impl Upstream {
         log::trace!("end send header.")
     }
 
-    pub fn send_body(&self, reader: &mut Read) {
+    pub fn send_body(&mut self, reader: &mut dyn Read) {
         let mut unsend_data_length = self.request.http_request_header.content_length;
         let mut buf = [0; 4096];
         while unsend_data_length > 0 {
@@ -92,9 +91,10 @@ impl Upstream {
     }
 
 
-    pub fn send(&self, buf: &[u8]) {
-        let mut stream = &self.stream;
-        stream.write(buf).unwrap();
+    pub fn send(&mut self, buf: &[u8]) {
+        //let mut stream = &self.stream;
+        self.stream.write(buf).unwrap();
+        //stream.write(buf).unwrap();
     }
     pub fn flush(&self) {
         let mut stream = &self.stream;
@@ -102,7 +102,7 @@ impl Upstream {
     }
 
 
-    pub fn read_http_response_info(&mut self) -> std::io::Result<http_response_info> {
+    pub fn read_http_response_info(&mut self) -> std::io::Result<HttpResponseInfo> {
         let mut read = &self.stream;
         return crate::server::http_response::read_http_response_info(&mut read);
     }

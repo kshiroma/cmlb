@@ -1,38 +1,68 @@
-use std::borrow::Borrow;
-use std::io::Read;
-use std::net::TcpStream;
+//use std::borrow::Borrow;
+//use std::io::Read;
+//use std::net::TcpStream;
 
-use regex::Regex;
+//use regex::Regex;
 
-use crate::http::http_header::http_header_entry;
-use crate::server::config::{relay_connection_info, routing_rule, server_config};
-use crate::server::http_request::http_request_info;
+//use crate::http::http_header::HttpHeaderEntry;
+use crate::server::config::{RelayConnectionInfo, RoutingRule, ServerConfig};
+use crate::server::http_request::HttpRequestInfo;
+use rand::Rng;
 
-pub fn create_sample_config() -> server_config {
-    let mut config = server_config::new();
-    //config.add(RoutingRule::new("odj".to_string(), routing_odj));
-    //config.add(RoutingRule::new("wakuden".to_string(), routing_wakuden));
+pub fn create_sample_config() -> ServerConfig {
+    let mut config = ServerConfig::new();
+    config.add(RoutingRule::new("odj".to_string(), routing_odj));
+    config.add(RoutingRule::new("wakuden".to_string(), routing_wakuden));
     //config.add(RoutingRule::new("timer".to_string(), routing_timer));
-    config.add(routing_rule::new("md".to_string(), routing_milliondollar));
+    //config.add(RoutingRule::new("md".to_string(), routing_milliondollar));
     return config;
 }
 
-fn routing_odj(request: &http_request_info) -> Option<relay_connection_info> {
+fn routing_odj(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     routing("odj", request)
 }
 
-fn routing_wakuden(request: &http_request_info) -> Option<relay_connection_info> {
+fn routing_wakuden(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     routing("wakuden", request)
 }
 
-fn routing(prefix: &str, request: &http_request_info) -> Option<relay_connection_info> {
+fn routing(prefix: &str, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
     let host = &request.http_request_header.host;
     let pattern = prefix.to_string() + ".";
     let pattern = pattern.as_str();
     let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
     let relay = if host.starts_with(pattern) {
-        Some(relay_connection_info {
+        let mut rng = rand::thread_rng(); // デフォルトの乱数生成器を初期化します
+        let i: i32 = rng.gen();
+        if i % 2 == 0 {
+            Some(RelayConnectionInfo {
+                host: "dev-jt0001".to_string(),
+                port: 8000,
+                path: path.to_string()
+            })
+        } else {
+            Some(RelayConnectionInfo {
+                host: "dev-jt0100".to_string(),
+                port: 8000,
+                path: path.to_string()
+            })
+        }
+    } else {
+        None
+    };
+    return relay;
+}
+
+
+fn routing_allows(prefix: &str,request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    let path = "/cattleya";
+    let host = &request.http_request_header.host;
+    let pattern = prefix.to_string() + ".";
+    let pattern = pattern.as_str();
+    let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
+    let relay = if host.starts_with(pattern) {
+        Some(RelayConnectionInfo {
             host: "dev-jt0001".to_string(),
             port: 8000,
             path: path.to_string() + conjunction + "targetUser=" + prefix,
@@ -49,7 +79,7 @@ fn routing(prefix: &str, request: &http_request_info) -> Option<relay_connection
 //    log::trace!("{} {}",request.http_first_line.uri,path);
 //    let relay = if request.http_first_line.uri.starts_with(path.as_str()) {
 
-fn routing_milliondollar(request: &http_request_info) -> Option<relay_connection_info> {
+fn routing_milliondollar(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let prefix: &str = "million-dollar";
 
     let host = &request.http_request_header.host;
@@ -57,7 +87,7 @@ fn routing_milliondollar(request: &http_request_info) -> Option<relay_connection
     let pattern = pattern.as_str();
     let conjunction: &str = &request.http_first_line.uri;
     let relay = if host.starts_with(pattern) {
-        Some(relay_connection_info {
+        Some(RelayConnectionInfo {
             host: "localhost".to_string(),
             port: 1234,
             path: "".to_string() + conjunction,
@@ -69,7 +99,7 @@ fn routing_milliondollar(request: &http_request_info) -> Option<relay_connection
 }
 
 
-fn routing_timer(request: &http_request_info) -> Option<relay_connection_info> {
+fn routing_timer(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let prefix: &str = "timer";
     let path = "/cattleya";
     let host = &request.http_request_header.host;
@@ -77,7 +107,7 @@ fn routing_timer(request: &http_request_info) -> Option<relay_connection_info> {
     let pattern = pattern.as_str();
     let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
     let relay = if host.starts_with(pattern) {
-        Some(relay_connection_info {
+        Some(RelayConnectionInfo {
             host: "dev-timer".to_string(),
             port: 8000,
             path: path.to_string() + conjunction + "targetUser=" + prefix,
@@ -93,7 +123,7 @@ fn routing_timer(request: &http_request_info) -> Option<relay_connection_info> {
 fn test() {
     use std::io::Read;
     use std::io::Write;
-    let relay = relay_connection_info {
+    let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 8080,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
@@ -117,19 +147,19 @@ fn test() {
 
 #[test]
 fn test_get_address() {
-    let relay = relay_connection_info {
+    let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 8080,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
     };
     assert_eq!("localhost:8080", relay.get_address());
-    let relay = relay_connection_info {
+    let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 80,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
     };
     assert_eq!("localhost", relay.get_address());
-    let relay = relay_connection_info {
+    let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 0,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
