@@ -79,7 +79,7 @@ impl Upstream {
 
     pub fn send_body(&mut self, reader: &mut dyn Read) {
         let mut unsend_data_length = self.request.http_request_header.content_length;
-        let mut buf = [0; 4096];
+        let mut buf = [0; 4096 * 4];
         while unsend_data_length > 0 {
             let size = reader.read(&mut buf).unwrap();
             let d = size.to_string();

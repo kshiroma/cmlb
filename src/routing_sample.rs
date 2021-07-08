@@ -11,28 +11,15 @@ use rand::Rng;
 
 pub fn create_sample_config() -> ServerConfig {
     let mut config = ServerConfig::new();
-    config.add(RoutingRule::new("odj".to_string(), routing_odj));
-    config.add(RoutingRule::new("wakuden".to_string(), routing_wakuden));
+    config.add(RoutingRule::new("routing".to_string(), routing));
     //config.add(RoutingRule::new("timer".to_string(), routing_timer));
     //config.add(RoutingRule::new("md".to_string(), routing_milliondollar));
     return config;
 }
 
-fn routing_odj(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    routing("odj", request)
-}
-
-fn routing_wakuden(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    routing("wakuden", request)
-}
-
-fn routing(prefix: &str, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+fn routing(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
-    let host = &request.http_request_header.host;
-    let pattern = prefix.to_string() + ".";
-    let pattern = pattern.as_str();
-    let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
-    let relay = if host.starts_with(pattern) {
+    let relay = if true {
         let mut rng = rand::thread_rng(); // デフォルトの乱数生成器を初期化します
         let i: i32 = rng.gen();
         if i % 2 == 0 {
@@ -48,25 +35,6 @@ fn routing(prefix: &str, request: &HttpRequestInfo) -> Option<RelayConnectionInf
                 path: path.to_string()
             })
         }
-    } else {
-        None
-    };
-    return relay;
-}
-
-
-fn routing_allows(prefix: &str,request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let path = "/cattleya";
-    let host = &request.http_request_header.host;
-    let pattern = prefix.to_string() + ".";
-    let pattern = pattern.as_str();
-    let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
-    let relay = if host.starts_with(pattern) {
-        Some(RelayConnectionInfo {
-            host: "dev-jt0001".to_string(),
-            port: 8000,
-            path: path.to_string() + conjunction + "targetUser=" + prefix,
-        })
     } else {
         None
     };
@@ -139,7 +107,7 @@ fn test() {
     stream.write(b"User-Agent: curl/7.55.1\r\n").unwrap();
     stream.write(b"Accept: */*\r\n\r\n").unwrap();
     stream.flush().unwrap();
-    let mut data = [0; 4096];
+    let mut data = [0; 4096 * 4];
     stream.read(&mut data).unwrap();
     println!("{}", String::from_utf8_lossy(&data));
 }

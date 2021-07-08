@@ -19,16 +19,14 @@ impl Worker {
         }
     }
 
-    pub fn handle(&self, mut _stream: TcpStream) -> std::io::Result<()> {
-        let b = Box::new(_stream);
-        let mut reader = b.try_clone()?;
-        let mut writer = b.try_clone().unwrap();
-        let stream = b.try_clone().unwrap();
-        //
-        self.handle_read_writer(&mut reader, &mut writer)?;
+    pub fn handle(&self, mut stream: TcpStream) -> std::io::Result<()> {
+        let mut stream_box = Box::new(stream);
+        let mut read = stream_box.try_clone().unwrap();
+        let mut write = stream_box.try_clone().unwrap();
+        self.handle_read_writer(&mut read, &mut write)?;
         //終わり
-        writer.flush().unwrap();
-        stream.shutdown(Shutdown::Both).unwrap();
+        stream_box.flush().unwrap();
+        stream_box.shutdown(Shutdown::Both).unwrap();
         //reader.shutdown(Shutdown::Both);
         log::trace!("shutdown stream");
         return Ok(());

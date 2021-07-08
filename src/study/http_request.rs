@@ -12,7 +12,7 @@ fn test() {
     //println!("{}", content);
     stream.write(content.as_bytes()).unwrap();
     stream.flush().unwrap();
-    let mut buffer = [0; 4096];
+    let mut buffer = [0; 4096 *4];
     stream.read(&mut buffer).unwrap();
 
     println!("{}", String::from_utf8_lossy(&buffer[..]));

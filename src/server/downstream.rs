@@ -1,6 +1,7 @@
 use std::io::prelude::*;
 
 use crate::server::http_response::HttpResponseInfo;
+
 //use std::borrow::Borrow;
 
 pub struct Downstream {
@@ -15,16 +16,6 @@ impl Downstream {
         };
         return downstream;
     }
-
-    pub fn send_first_line0(&self, mut writer: Box<dyn Write>) {
-        writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
-        writer.write(b" ").unwrap();
-        writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes()).unwrap();
-        writer.write(b" ").unwrap();
-        writer.write(self.response.http_first_line.http_status.as_bytes()).unwrap();
-        writer.write(b"\r\n").unwrap();
-    }
-
 
     pub fn send_first_line(&self, writer: &mut dyn Write) {
         writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
@@ -64,8 +55,8 @@ impl Downstream {
         log::trace!("start send_body");
         let data_length = self.response.http_response_header.content_length;
         log::trace!("let data_length = self.response.http_response_header.content_length;");
-        let mut buf = [0; 4096];
-        log::trace!(stringify!(let mut buf = [0; 4096];));
+        let mut buf = [0; 4096 * 4];
+        log::trace!(stringify!(let mut buf = [0; 4096*4];));
         if data_length > 0 {
             log::trace!("enter data_length>0");
             let mut unsent_data_length = self.response.http_response_header.content_length;
