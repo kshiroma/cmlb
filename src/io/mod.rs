@@ -26,7 +26,7 @@ pub fn read_line(reader:&mut dyn Read) -> String {
 pub fn read_line2(reader:&mut dyn BufRead) -> String {
     let mut string = String::new();
     reader.read_line(&mut string).unwrap();
-    string
+    string.trim().to_string()
 }
 
 #[test]

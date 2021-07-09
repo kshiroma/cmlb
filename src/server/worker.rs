@@ -34,7 +34,7 @@ impl Worker {
         return Ok(());
     }
 
-    fn handle_read_writer(&self, reader: &mut Read, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn handle_read_writer(&self, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let request = read_http_request(reader)?;
         let relay: Option<RelayConnectionInfo> = self.config.route(&request);
         if relay.is_none() {

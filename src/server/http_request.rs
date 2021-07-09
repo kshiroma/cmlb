@@ -93,11 +93,11 @@ impl HttpRequestHeader {
     }
 }
 
-pub fn read_http_request(reader: &mut Read) -> io::Result<HttpRequestInfo> {
-    let first_line_string = read_line(reader);
+pub fn read_http_request(reader: &mut BufRead) -> io::Result<HttpRequestInfo> {
+    let first_line_string = read_line2(reader);
     let first_line = HttpRequestFirstLine::new(first_line_string);
     log::trace!("{}", "begin read header");
-    let headers = read_header(reader).unwrap();
+    let headers = read_header2(reader).unwrap();
     log::trace!("read {} headers", headers.headers.len());
     return Ok(HttpRequestInfo::new(first_line, headers));
 }
@@ -107,6 +107,21 @@ pub fn read_header(reader: &mut dyn Read) -> std::io::Result<HttpRequestHeader> 
     loop {
         let line = read_line(reader);
         if line.is_empty() {
+            break;
+        }
+        headers.add_string(line)?;
+    }
+    return Ok(headers);
+}
+
+pub fn read_header2(reader: &mut dyn BufRead) -> std::io::Result<HttpRequestHeader> {
+    let mut headers: HttpRequestHeader = HttpRequestHeader::empty()?;
+    loop {
+        log::trace!("begin read_line  ");
+        let line = read_line2(reader);
+        log::trace!("read {}",line);
+        if line.is_empty() {
+            log::trace!("empty");
             break;
         }
         headers.add_string(line)?;

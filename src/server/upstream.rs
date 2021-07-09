@@ -84,7 +84,7 @@ impl Upstream {
         log::trace!("end send header.")
     }
 
-    pub fn send_body(&mut self, reader: &mut dyn Read) {
+    pub fn send_body(&mut self, reader: &mut dyn BufRead) {
         let mut unsend_data_length = self.request.http_request_header.content_length;
         let mut buf = [0; 4096 * 4];
         while unsend_data_length > 0 {
