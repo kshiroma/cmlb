@@ -8,6 +8,7 @@ use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
 use crate::server::upstream::Upstream;
+use std::ops::Deref;
 
 pub struct Worker {
     config: Arc<ServerConfig>,
@@ -22,7 +23,7 @@ impl Worker {
 
     pub fn handle(&self, mut stream: TcpStream) -> std::io::Result<()> {
         let mut stream_box = Box::new(stream);
-        let mut read= stream_box.try_clone().unwrap();
+        let mut read = stream_box.try_clone().unwrap();
         let mut write = stream_box.try_clone().unwrap();
         let mut bufReader = BufReader::new(read);
         self.handle_read_writer(&mut bufReader, &mut write)?;
@@ -42,6 +43,9 @@ impl Worker {
             not_found(writer).unwrap();
             return Ok(());
         }
+        let count = self.config.count.deref() + 1;
+        self.config.count.  count;
+
         let relay = relay.unwrap();
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //

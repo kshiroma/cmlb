@@ -1,10 +1,12 @@
 use std::net::TcpStream;
+use std::sync::Arc;
 
 use crate::server::http_request::HttpRequestInfo;
+use std::rc::Rc;
 
 pub struct RoutingRule {
     name: String,
-    routing_rule: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo>,
+    routing_rule: fn(&ServerConfig, &HttpRequestInfo) -> Option<RelayConnectionInfo>,
 }
 
 pub struct RelayConnectionInfo {
@@ -32,28 +34,30 @@ impl RelayConnectionInfo {
 }
 
 impl RoutingRule {
-    pub fn new(name: String, routing_rule: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
+    pub fn new(name: String, routing_rule: fn(&ServerConfig,&HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
         RoutingRule {
             name,
             routing_rule,
         }
     }
 
-    pub fn route(&self, requet: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-        let func: fn(&HttpRequestInfo) -> Option<RelayConnectionInfo> = self.routing_rule;
-        return func(requet);
+    pub fn route(&self, config:&ServerConfig,requet: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+        let func: fn(&ServerConfig,&HttpRequestInfo) -> Option<RelayConnectionInfo> = self.routing_rule;
+        return func(config,requet);
     }
 }
 
 pub struct ServerConfig {
     routing_rules: Vec<RoutingRule>,
+    pub count:Arc<i32> ,
 }
 
 impl ServerConfig {
     pub fn new() -> Self {
         let vec: Vec<RoutingRule> = Vec::new();
         ServerConfig {
-            routing_rules: vec
+            routing_rules: vec,
+            count: Arc::new(0)
         }
     }
 
@@ -63,7 +67,7 @@ impl ServerConfig {
 
     pub fn find_routing_rule(&self, request: &HttpRequestInfo) -> Option<&RoutingRule> {
         for rule in self.routing_rules.iter() {
-            if let Some(_) = (rule.routing_rule)(request) {
+            if let Some(_) = (rule.routing_rule)(&self,request) {
                 return Some(rule);
             }
         }
@@ -73,7 +77,7 @@ impl ServerConfig {
     pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
-            if let Some(r) = (rule.routing_rule)(request) {
+            if let Some(r) = (rule.routing_rule)(&self,request) {
                 return Some(r);
             }
         }

@@ -16,8 +16,8 @@ pub mod routing_sample;
 
 
 fn main() {
-    env::set_var("RUST_LOG", "trace");
-    env_logger::init();
+    //env::set_var("RUST_LOG", "trace");
+    //env_logger::init();
     let config = create_sample_config();
     server::listen(config, 80).unwrap();
 }

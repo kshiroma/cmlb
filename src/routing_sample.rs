@@ -8,20 +8,21 @@
 use crate::server::config::{RelayConnectionInfo, RoutingRule, ServerConfig};
 use crate::server::http_request::HttpRequestInfo;
 use rand::Rng;
+use std::ops::Deref;
 
 pub fn create_sample_config() -> ServerConfig {
     let mut config = ServerConfig::new();
+    //config.add(RoutingRule::new("ok".to_string(), ok));
     config.add(RoutingRule::new("routing".to_string(), routing));
     //config.add(RoutingRule::new("timer".to_string(), routing_timer));
     //config.add(RoutingRule::new("md".to_string(), routing_milliondollar));
     return config;
 }
 
-fn routing(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+fn routing(config:&ServerConfig , request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
     let relay = if true {
-        let mut rng = rand::thread_rng(); // デフォルトの乱数生成器を初期化します
-        let i: i32 = rng.gen();
+        let i = config.count.deref();
         if i % 2 == 0 {
             Some(RelayConnectionInfo {
                 host: "dev-jt0001".to_string(),
