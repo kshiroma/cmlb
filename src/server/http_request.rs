@@ -1,9 +1,10 @@
 use std::io;
+use std::io::BufReader;
 use std::io::prelude::*;
+use std::net::TcpStream;
 
+use crate::http::http_header::{HttpHeaderEntry, parse};
 use crate::io::*;
-
-use crate::http::http_header::{parse, HttpHeaderEntry};
 
 pub struct HttpRequestInfo {
     pub http_first_line: HttpRequestFirstLine,
@@ -92,7 +93,7 @@ impl HttpRequestHeader {
     }
 }
 
-pub fn read_http_request(reader: &mut dyn Read) -> io::Result<HttpRequestInfo> {
+pub fn read_http_request(reader: &mut Read) -> io::Result<HttpRequestInfo> {
     let first_line_string = read_line(reader);
     let first_line = HttpRequestFirstLine::new(first_line_string);
     log::trace!("{}", "begin read header");

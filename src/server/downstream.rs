@@ -18,36 +18,40 @@ impl Downstream {
     }
 
     pub fn send_first_line(&self, writer: &mut dyn Write) {
-        writer.write(self.response.http_first_line.protocol_version.as_bytes()).unwrap();
-        writer.write(b" ").unwrap();
-        writer.write(self.response.http_first_line.http_status_code.to_string().as_bytes()).unwrap();
-        writer.write(b" ").unwrap();
-        writer.write(self.response.http_first_line.http_status.as_bytes()).unwrap();
-        writer.write(b"\r\n").unwrap();
+        let mut string =String::new();
+        string.push_str(self.response.http_first_line.protocol_version.as_str());
+        string.push_str(" ");
+        string.push_str(self.response.http_first_line.http_status_code.to_string().as_str());
+        string.push_str(" ");
+        string.push_str(self.response.http_first_line.http_status.as_str());
+        string.push_str("\r\n");
+        writer.write(string.as_bytes());
     }
 
     pub fn send_headers(&self, writer: &mut dyn Write) {
+        let mut string =String::new();
         //if self.response.http_response_header.keep_alive {}
-        writer.write(b"Connection: close").unwrap();
-        writer.write(b"\r\n").unwrap();
+        string.push_str("Connection: close");
+        string.push_str("\r\n");
         if self.response.http_response_header.content_length > 0 {
-            writer.write(b"Content-Length: ").unwrap();
-            writer.write(self.response.http_response_header.content_length.to_string().as_bytes()).unwrap();
-            writer.write(b"\r\n").unwrap();
+            string.push_str("Content-Length: ");
+            string.push_str(self.response.http_response_header.content_length.to_string().as_str());
+            string.push_str("\r\n");
         }
         let response = &self.response;
         for header in &response.http_response_header.headers {
             let name = &header.name;
             let value = &header.value;
-            writer.write(name.as_bytes()).unwrap();
-            writer.write(b": ").unwrap();
-            writer.write(value.as_bytes()).unwrap();
-            writer.write(b"\r\n").unwrap();
+            string.push_str(name);
+            string.push_str(": ");
+            string.push_str(value);
+            string.push_str("\r\n");
         }
-        writer.write(b"X-CMLB: cmlb").unwrap();
-        writer.write(b"\r\n").unwrap();
+        string.push_str("X-CMLB: cmlb");
+        string.push_str("\r\n");
 
-        writer.write(b"\r\n").unwrap();
+        string.push_str("\r\n");
+        writer.write(string.as_bytes());
         log::trace!("end send response header.")
     }
 

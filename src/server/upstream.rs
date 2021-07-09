@@ -1,3 +1,4 @@
+use std::io::BufReader;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::rc::Rc;
@@ -10,7 +11,8 @@ use crate::server::http_response::HttpResponseInfo;
 pub struct Upstream {
     relay: Rc<RelayConnectionInfo>,
     request: Rc<HttpRequestInfo>,
-    pub stream: TcpStream,
+    stream: TcpStream,
+    pub bufReader: BufReader<TcpStream>,
 }
 
 impl Upstream {
@@ -19,11 +21,16 @@ impl Upstream {
         if result.is_err() {
             return None;
         }
-        let stream = result.unwrap();
+        let mut stream = result.unwrap();
+        let s = Box::new(stream);
+        let mut read = s.try_clone().unwrap();
+        let mut a = s.try_clone().unwrap();
+        let bufReader = BufReader::new(read);
         let upstream = Upstream {
             relay,
             request,
-            stream,
+            stream: a,
+            bufReader,
         };
         return Some(upstream);
     }
@@ -46,34 +53,34 @@ impl Upstream {
         let mut stream = &self.stream;
         let a = self.request.clone();
         let request = &a;
-
+        let mut string = String::new();
         //Host
         if self.relay.host.is_empty() == false {
-            stream.write(b"Host: ").unwrap();
-            //stream.write(self.relay.host.as_bytes());
-            stream.write(request.http_request_header.host.as_bytes()).unwrap();
-            stream.write(b"\r\n").unwrap();
+            string.push_str("Host: ");
+            string.push_str(request.http_request_header.host.as_str());
+            string.push_str("\r\n");
             log::debug!("host:{}",request.http_request_header.host);
             log::trace!("end send host.")
         }
         //Connection
         if request.http_request_header.keep_alive {}
         if request.http_request_header.content_length > 0 {
-            stream.write(b"Content-Length: ").unwrap();
-            stream.write(request.http_request_header.content_length.to_string().as_bytes()).unwrap();
-            stream.write(b"\r\n").unwrap();
+            string.push_str("Content-Length: ");
+            string.push_str(request.http_request_header.content_length.to_string().as_str());
+            string.push_str("\r\n");
         }
         //ヘッダー
         let headers = &a.http_request_header.headers;
         for header in headers {
             let name = &header.name;
             let value = &header.value;
-            stream.write(name.as_bytes()).unwrap();
-            stream.write(b": ").unwrap();
-            stream.write(value.as_bytes()).unwrap();
-            stream.write(b"\r\n").unwrap();
+            string.push_str(name);
+            string.push_str(": ");
+            string.push_str(value);
+            string.push_str("\r\n");
         }
-        stream.write(b"\r\n").unwrap();
+        string.push_str("\r\n");
+        stream.write(string.as_bytes());
         log::trace!("end send header.")
     }
 
@@ -103,7 +110,7 @@ impl Upstream {
 
 
     pub fn read_http_response_info(&mut self) -> std::io::Result<HttpResponseInfo> {
-        let mut read = &self.stream;
-        return crate::server::http_response::read_http_response_info(&mut read);
+        //let mut read = &self.stream;
+        return crate::server::http_response::read_http_response_info(&mut self.bufReader);
     }
 }

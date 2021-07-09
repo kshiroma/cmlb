@@ -1,3 +1,4 @@
+use std::io::BufReader;
 use std::io::prelude::*;
 use std::net::{Shutdown, TcpStream};
 use std::sync::Arc;
@@ -21,9 +22,10 @@ impl Worker {
 
     pub fn handle(&self, mut stream: TcpStream) -> std::io::Result<()> {
         let mut stream_box = Box::new(stream);
-        let mut read = stream_box.try_clone().unwrap();
+        let mut read= stream_box.try_clone().unwrap();
         let mut write = stream_box.try_clone().unwrap();
-        self.handle_read_writer(&mut read, &mut write)?;
+        let mut bufReader = BufReader::new(read);
+        self.handle_read_writer(&mut bufReader, &mut write)?;
         //終わり
         stream_box.flush().unwrap();
         stream_box.shutdown(Shutdown::Both).unwrap();
@@ -32,7 +34,7 @@ impl Worker {
         return Ok(());
     }
 
-    fn handle_read_writer(&self, reader: &mut dyn Read, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn handle_read_writer(&self, reader: &mut Read, writer: &mut dyn Write) -> std::io::Result<()> {
         let request = read_http_request(reader)?;
         let relay: Option<RelayConnectionInfo> = self.config.route(&request);
         if relay.is_none() {
@@ -57,13 +59,14 @@ impl Worker {
         log::trace!("upstream.flush();");
         let response_info = upstream.read_http_response_info().unwrap();
         log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
+
         let downstream = Downstream::new(response_info);
         log::trace!("let downstream = Downstream::new(response_info);");
         downstream.send_first_line(writer);
         log::trace!("downstream.sendFirstLine(writer);");
         downstream.send_headers(writer);
         log::trace!("downstream.sendHeaders(writer);");
-        downstream.send_body(&mut upstream.stream, writer);
+        downstream.send_body(&mut upstream.bufReader, writer);
         log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
         writer.flush().unwrap();
         log::trace!("writer.flush();");
