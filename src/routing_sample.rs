@@ -22,7 +22,8 @@ pub fn create_sample_config() -> ServerConfig {
 fn routing(config:&ServerConfig , request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
     let relay = if true {
-        let i = config.count.deref();
+        let i = &config.count;
+        println!("connt {}",i.deref());
         if i % 2 == 0 {
             Some(RelayConnectionInfo {
                 host: "dev-jt0001".to_string(),

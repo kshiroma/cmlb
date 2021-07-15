@@ -8,7 +8,7 @@ use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
 use crate::server::upstream::Upstream;
-use std::ops::Deref;
+use std::ops::{Deref, Add};
 
 pub struct Worker {
     config: Arc<ServerConfig>,
@@ -43,8 +43,7 @@ impl Worker {
             not_found(writer).unwrap();
             return Ok(());
         }
-        let count = self.config.count.deref() + 1;
-        self.config.count.  count;
+        self.config.count.add(1);
 
         let relay = relay.unwrap();
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
