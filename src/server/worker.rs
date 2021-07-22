@@ -43,7 +43,7 @@ impl Worker {
             not_found(writer).unwrap();
             return Ok(());
         }
-        self.config.count.add(1);
+        self.config.addCount();
 
         let relay = relay.unwrap();
         log::info!("relay connection host is {}:{}", relay.host, relay.port);

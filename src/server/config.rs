@@ -1,8 +1,8 @@
 use std::net::TcpStream;
-use std::sync::Arc;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use crate::server::http_request::HttpRequestInfo;
-use std::rc::Rc;
 
 pub struct RoutingRule {
     name: String,
@@ -34,22 +34,22 @@ impl RelayConnectionInfo {
 }
 
 impl RoutingRule {
-    pub fn new(name: String, routing_rule: fn(&ServerConfig,&HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
+    pub fn new(name: String, routing_rule: fn(&ServerConfig, &HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
         RoutingRule {
             name,
             routing_rule,
         }
     }
 
-    pub fn route(&self, config:&ServerConfig,requet: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-        let func: fn(&ServerConfig,&HttpRequestInfo) -> Option<RelayConnectionInfo> = self.routing_rule;
-        return func(config,requet);
+    pub fn route(&self, config: &ServerConfig, requet: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+        let func: fn(&ServerConfig, &HttpRequestInfo) -> Option<RelayConnectionInfo> = self.routing_rule;
+        return func(config, requet);
     }
 }
 
 pub struct ServerConfig {
     routing_rules: Vec<RoutingRule>,
-    pub count:Arc<i32> ,
+    pub count: Mutex<i32>,
 }
 
 impl ServerConfig {
@@ -57,7 +57,7 @@ impl ServerConfig {
         let vec: Vec<RoutingRule> = Vec::new();
         ServerConfig {
             routing_rules: vec,
-            count: Arc::new(0)
+            count: Mutex::new(0),
         }
     }
 
@@ -67,7 +67,7 @@ impl ServerConfig {
 
     pub fn find_routing_rule(&self, request: &HttpRequestInfo) -> Option<&RoutingRule> {
         for rule in self.routing_rules.iter() {
-            if let Some(_) = (rule.routing_rule)(&self,request) {
+            if let Some(_) = (rule.routing_rule)(&self, request) {
                 return Some(rule);
             }
         }
@@ -77,10 +77,21 @@ impl ServerConfig {
     pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
-            if let Some(r) = (rule.routing_rule)(&self,request) {
+            if let Some(r) = (rule.routing_rule)(&self, request) {
                 return Some(r);
             }
         }
         return None;
+    }
+
+    pub fn addCount(&self) -> i32 {
+        let mut m = self.count.lock().unwrap();
+        *m = *m + 1;
+        return *m;
+    }
+
+    pub fn getCount(&self) -> i32 {
+        let mut m = self.count.lock().unwrap();
+        return *m;
     }
 }
