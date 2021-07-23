@@ -7,8 +7,7 @@
 //use crate::http::http_header::HttpHeaderEntry;
 use crate::server::config::{RelayConnectionInfo, RoutingRule, ServerConfig};
 use crate::server::http_request::HttpRequestInfo;
-use rand::Rng;
-use std::ops::Deref;
+
 
 pub fn create_sample_config() -> ServerConfig {
     let mut config = ServerConfig::new();
@@ -22,7 +21,7 @@ pub fn create_sample_config() -> ServerConfig {
 fn routing(config:&ServerConfig , request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
     let relay = if true {
-        let i = config.getCount();
+        let i = config.get_count();
         println!("connt {}",i);
         if i % 2 == 0 {
             Some(RelayConnectionInfo {

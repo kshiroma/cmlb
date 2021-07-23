@@ -25,7 +25,7 @@ impl Downstream {
         string.push_str(" ");
         string.push_str(self.response.http_first_line.http_status.as_str());
         string.push_str("\r\n");
-        writer.write(string.as_bytes());
+        writer.write(string.as_bytes()).unwrap();
     }
 
     pub fn send_headers(&self, writer: &mut dyn Write) {
@@ -51,7 +51,7 @@ impl Downstream {
         string.push_str("\r\n");
 
         string.push_str("\r\n");
-        writer.write(string.as_bytes());
+        writer.write(string.as_bytes()).unwrap();
         log::trace!("end send response header.")
     }
 

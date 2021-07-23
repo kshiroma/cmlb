@@ -12,7 +12,7 @@ pub struct Upstream {
     relay: Rc<RelayConnectionInfo>,
     request: Rc<HttpRequestInfo>,
     stream: TcpStream,
-    pub bufReader: BufReader<TcpStream>,
+    pub buf_reader: BufReader<TcpStream>,
 }
 
 impl Upstream {
@@ -21,16 +21,16 @@ impl Upstream {
         if result.is_err() {
             return None;
         }
-        let mut stream = result.unwrap();
+        let stream = result.unwrap();
         let s = Box::new(stream);
-        let mut read = s.try_clone().unwrap();
-        let mut a = s.try_clone().unwrap();
-        let bufReader = BufReader::new(read);
+        let read = s.try_clone().unwrap();
+        let a = s.try_clone().unwrap();
+        let buf_reader = BufReader::new(read);
         let upstream = Upstream {
             relay,
             request,
             stream: a,
-            bufReader,
+            buf_reader,
         };
         return Some(upstream);
     }
@@ -80,7 +80,7 @@ impl Upstream {
             string.push_str("\r\n");
         }
         string.push_str("\r\n");
-        stream.write(string.as_bytes());
+        stream.write(string.as_bytes()).unwrap();
         log::trace!("end send header.")
     }
 
@@ -111,6 +111,6 @@ impl Upstream {
 
     pub fn read_http_response_info(&mut self) -> std::io::Result<HttpResponseInfo> {
         //let mut read = &self.stream;
-        return crate::server::http_response::read_http_response_info(&mut self.bufReader);
+        return crate::server::http_response::read_http_response_info(&mut self.buf_reader);
     }
 }

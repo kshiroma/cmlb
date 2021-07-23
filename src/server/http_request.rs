@@ -93,7 +93,7 @@ impl HttpRequestHeader {
     }
 }
 
-pub fn read_http_request(reader: &mut BufRead) -> io::Result<HttpRequestInfo> {
+pub fn read_http_request(reader: &mut dyn BufRead) -> io::Result<HttpRequestInfo> {
     let first_line_string = read_line2(reader);
     let first_line = HttpRequestFirstLine::new(first_line_string);
     log::trace!("{}", "begin read header");

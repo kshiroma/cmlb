@@ -84,14 +84,14 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn addCount(&self) -> i32 {
+    pub fn add_count(&self) -> i32 {
         let mut m = self.count.lock().unwrap();
         *m = *m + 1;
         return *m;
     }
 
-    pub fn getCount(&self) -> i32 {
-        let mut m = self.count.lock().unwrap();
+    pub fn get_count(&self) -> i32 {
+        let m = self.count.lock().unwrap();
         return *m;
     }
 }

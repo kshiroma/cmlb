@@ -8,7 +8,6 @@ use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
 use crate::server::upstream::Upstream;
-use std::ops::{Deref, Add};
 
 pub struct Worker {
     config: Arc<ServerConfig>,
@@ -21,12 +20,12 @@ impl Worker {
         }
     }
 
-    pub fn handle(&self, mut stream: TcpStream) -> std::io::Result<()> {
+    pub fn handle(&self, stream: TcpStream) -> std::io::Result<()> {
         let mut stream_box = Box::new(stream);
-        let mut read = stream_box.try_clone().unwrap();
+        let read = stream_box.try_clone().unwrap();
         let mut write = stream_box.try_clone().unwrap();
-        let mut bufReader = BufReader::new(read);
-        self.handle_read_writer(&mut bufReader, &mut write)?;
+        let mut buf_reader = BufReader::new(read);
+        self.handle_read_writer(&mut buf_reader, &mut write)?;
         //終わり
         stream_box.flush().unwrap();
         stream_box.shutdown(Shutdown::Both).unwrap();
@@ -43,7 +42,7 @@ impl Worker {
             not_found(writer).unwrap();
             return Ok(());
         }
-        self.config.addCount();
+        self.config.add_count();
 
         let relay = relay.unwrap();
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
@@ -69,7 +68,7 @@ impl Worker {
         log::trace!("downstream.sendFirstLine(writer);");
         downstream.send_headers(writer);
         log::trace!("downstream.sendHeaders(writer);");
-        downstream.send_body(&mut upstream.bufReader, writer);
+        downstream.send_body(&mut upstream.buf_reader, writer);
         log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
         writer.flush().unwrap();
         log::trace!("writer.flush();");
