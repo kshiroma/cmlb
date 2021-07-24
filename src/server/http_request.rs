@@ -143,8 +143,6 @@ fn test_http_request_request_header() {
         "Content-Type: aaa:bbb".to_string(),
     ];
     let header = HttpRequestHeader::new(vec).unwrap();
-    let mut a = "".to_string();
-    a.push_str("aaa");
 
     println!("HOST : {} ", header.host);
     println!("KeepAlive: {} ", header.keep_alive);
