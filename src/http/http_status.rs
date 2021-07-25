@@ -7,6 +7,7 @@ pub struct HttpStatusEntry {
 }
 
 pub enum HttpStatus {
+    Ok,
     NotFound,
     BadRequest,
     InternalServerError,
@@ -29,6 +30,7 @@ impl HttpStatus {
 
     pub fn get_as_entry(&self) -> Option<HttpStatusEntry> {
         let (code, status) = match self {
+            HttpStatus::Ok => (200, "Ok"),
             HttpStatus::NotFound => (404, "Not Found"),
             HttpStatus::BadRequest => (400, "Bad Request"),
             HttpStatus::InternalServerError => (500, "Internal Server Error"),
@@ -46,11 +48,6 @@ impl HttpStatus {
 }
 
 
-#[test]
-fn test() {
-    println!("{}", HttpStatus::BadRequest.get().unwrap());
-    println!("{}", HttpStatus::BadRequest.get_as_string().unwrap());
-}
 
 pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     let status = HttpStatus::NotFound;
@@ -66,4 +63,11 @@ pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     writer.write(buf)?;
     write!(writer, "\r\n")?;
     return Ok(());
+}
+
+
+#[test]
+fn test() {
+    println!("{}", HttpStatus::BadRequest.get().unwrap());
+    println!("{}", HttpStatus::BadRequest.get_as_string().unwrap());
 }

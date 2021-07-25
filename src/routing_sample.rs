@@ -8,33 +8,64 @@
 use crate::server::config::{RelayConnectionInfo, RoutingRule, ServerConfig};
 use crate::server::http_request::HttpRequestInfo;
 
-
 pub fn create_sample_config() -> ServerConfig {
     let mut config = ServerConfig::new();
     //config.add(RoutingRule::new("ok".to_string(), ok));
+    config.add(RoutingRule::new("set_routing_number".to_string(), set_routing_number));
     config.add(RoutingRule::new("routing".to_string(), routing));
     //config.add(RoutingRule::new("timer".to_string(), routing_timer));
     //config.add(RoutingRule::new("md".to_string(), routing_milliondollar));
     return config;
 }
 
-fn routing(config:&ServerConfig , request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+fn set_routing_number(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    let path = "/set_routing_number";
+    if (request.http_first_line.uri.starts_with(path)) {
+        let number = request.http_first_line.uri.replace(path,"");
+        let number = from_str(number);
+        config.set_routing_number(number);
+    }
+    return None;
+}
+
+fn routing(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/cattleya";
+
     let relay = if true {
         let i = config.get_count();
-        println!("connt {}",i);
-        if i % 2 == 0 {
-            Some(RelayConnectionInfo {
-                host: "localhost".to_string(),
-                port: 8000,
-                path: path.to_string()
-            })
-        } else {
-            Some(RelayConnectionInfo {
-                host: "localhost".to_string(),
-                port: 8000,
-                path: path.to_string()
-            })
+        let n = config.get_routing_number();
+        println!("connt {}", i);
+        match n {
+            0 =>
+                if i % 2 == 0 {
+                    Some(RelayConnectionInfo {
+                        host: "localhost".to_string(),
+                        port: 8000,
+                        path: path.to_string(),
+                        relayInfo: "0_0".to_string(),
+                    })
+                } else {
+                    Some(RelayConnectionInfo {
+                        host: "localhost".to_string(),
+                        port: 8000,
+                        path: path.to_string(),
+                        relayInfo: "0_1".to_string(),
+                    })
+                },
+            1 =>
+                Some(RelayConnectionInfo {
+                    host: "localhost".to_string(),
+                    port: 8000,
+                    path: path.to_string(),
+                    relayInfo: "1__".to_string(),
+                }),
+            _ =>
+                Some(RelayConnectionInfo {
+                    host: "localhost".to_string(),
+                    port: 8000,
+                    path: path.to_string(),
+                    relayInfo: "___".to_string(),
+                }),
         }
     } else {
         None
@@ -60,6 +91,7 @@ fn routing_milliondollar(request: &HttpRequestInfo) -> Option<RelayConnectionInf
             host: "localhost".to_string(),
             port: 1234,
             path: "".to_string() + conjunction,
+            relayInfo: "million_dollar".to_string(),
         })
     } else {
         None
@@ -80,6 +112,7 @@ fn routing_timer(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
             host: "dev-timer".to_string(),
             port: 8000,
             path: path.to_string() + conjunction + "targetUser=" + prefix,
+            relayInfo: "chronotrigger".to_string(),
         })
     } else {
         None
@@ -96,6 +129,7 @@ fn test() {
         host: "localhost".to_string(),
         port: 8080,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
+        relayInfo: "test".to_string(),
     };
     println!("relay host is {}", relay.get_address());
 
@@ -120,18 +154,21 @@ fn test_get_address() {
         host: "localhost".to_string(),
         port: 8080,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
+        relayInfo: "test".to_string(),
     };
     assert_eq!("localhost:8080", relay.get_address());
     let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 80,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
+        relayInfo: "test".to_string(),
     };
     assert_eq!("localhost", relay.get_address());
     let relay = RelayConnectionInfo {
         host: "localhost".to_string(),
         port: 0,
         path: "/cattleya/view/login?targetUser=wakuden".to_string(),
+        relayInfo: "test".to_string(),
     };
     assert_eq!("localhost", relay.get_address());
 }
