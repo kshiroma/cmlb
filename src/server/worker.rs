@@ -8,6 +8,7 @@ use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
 use crate::server::upstream::Upstream;
+use crate::server::http_response::Response;
 
 pub struct Worker {
     config: Arc<ServerConfig>,

@@ -21,8 +21,8 @@ pub fn create_sample_config() -> ServerConfig {
 fn set_routing_number(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let path = "/set_routing_number";
     if (request.http_first_line.uri.starts_with(path)) {
-        let number = request.http_first_line.uri.replace(path,"");
-        let number = from_str(number);
+        let number = request.http_first_line.uri.replace(path, "");
+        let number = number.parse().unwrap();
         config.set_routing_number(number);
     }
     return None;
@@ -38,34 +38,34 @@ fn routing(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConn
         match n {
             0 =>
                 if i % 2 == 0 {
-                    Some(RelayConnectionInfo {
-                        host: "localhost".to_string(),
-                        port: 8000,
-                        path: path.to_string(),
-                        relayInfo: "0_0".to_string(),
-                    })
+                    Some(RelayConnectionInfo::new2(
+                        "localhost",
+                        8000,
+                        path,
+                        "0_0",
+                    ))
                 } else {
-                    Some(RelayConnectionInfo {
-                        host: "localhost".to_string(),
-                        port: 8000,
-                        path: path.to_string(),
-                        relayInfo: "0_1".to_string(),
-                    })
+                    Some(RelayConnectionInfo::new2(
+                        "localhost",
+                        8000,
+                        path,
+                        "0_1")
+                    )
                 },
             1 =>
-                Some(RelayConnectionInfo {
-                    host: "localhost".to_string(),
-                    port: 8000,
-                    path: path.to_string(),
-                    relayInfo: "1__".to_string(),
-                }),
+                Some(RelayConnectionInfo::new2(
+                    "localhost",
+                    8000,
+                    path,
+                    "1__",
+                )),
             _ =>
-                Some(RelayConnectionInfo {
-                    host: "localhost".to_string(),
-                    port: 8000,
-                    path: path.to_string(),
-                    relayInfo: "___".to_string(),
-                }),
+                Some(RelayConnectionInfo::new2(
+                    "localhost",
+                    8000,
+                    path,
+                    "___")
+                )
         }
     } else {
         None
@@ -87,12 +87,12 @@ fn routing_milliondollar(request: &HttpRequestInfo) -> Option<RelayConnectionInf
     let pattern = pattern.as_str();
     let conjunction: &str = &request.http_first_line.uri;
     let relay = if host.starts_with(pattern) {
-        Some(RelayConnectionInfo {
-            host: "localhost".to_string(),
-            port: 1234,
-            path: "".to_string() + conjunction,
-            relayInfo: "million_dollar".to_string(),
-        })
+        Some(RelayConnectionInfo::new2(
+            "localhost",
+            1234,
+            conjunction,
+            "million_dollar",
+        ))
     } else {
         None
     };
@@ -108,12 +108,12 @@ fn routing_timer(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
     let pattern = pattern.as_str();
     let conjunction: &str = if request.http_first_line.uri.contains('?') { "&" } else { "?" };
     let relay = if host.starts_with(pattern) {
-        Some(RelayConnectionInfo {
-            host: "dev-timer".to_string(),
-            port: 8000,
-            path: path.to_string() + conjunction + "targetUser=" + prefix,
-            relayInfo: "chronotrigger".to_string(),
-        })
+        Some(RelayConnectionInfo::new2(
+            "dev-timer",
+            8000,
+            (path.to_string() + conjunction + "targetUser=" + prefix).as_str(),
+            "chronotrigger",
+        ))
     } else {
         None
     };
@@ -125,12 +125,11 @@ fn routing_timer(request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
 fn test() {
     use std::io::Read;
     use std::io::Write;
-    let relay = RelayConnectionInfo {
-        host: "localhost".to_string(),
-        port: 8080,
-        path: "/cattleya/view/login?targetUser=wakuden".to_string(),
-        relayInfo: "test".to_string(),
-    };
+    let relay =
+        RelayConnectionInfo::new1(
+            "localhost",
+            8080,
+            "/cattleya/view/login?targetUser=wakuden");
     println!("relay host is {}", relay.get_address());
 
     let mut stream = &relay.connect_relay().unwrap();
@@ -150,26 +149,21 @@ fn test() {
 
 #[test]
 fn test_get_address() {
-    let relay = RelayConnectionInfo {
-        host: "localhost".to_string(),
-        port: 8080,
-        path: "/cattleya/view/login?targetUser=wakuden".to_string(),
-        relayInfo: "test".to_string(),
-    };
+    let relay = RelayConnectionInfo::new1(
+        "localhost",
+        8080,
+        "/cattleya/view/login?targetUser=wakuden");
     assert_eq!("localhost:8080", relay.get_address());
-    let relay = RelayConnectionInfo {
-        host: "localhost".to_string(),
-        port: 80,
-        path: "/cattleya/view/login?targetUser=wakuden".to_string(),
-        relayInfo: "test".to_string(),
-    };
+    let relay = RelayConnectionInfo::new1(
+        "localhost",
+        80,
+        "/cattleya/view/login?targetUser=wakuden");
     assert_eq!("localhost", relay.get_address());
-    let relay = RelayConnectionInfo {
-        host: "localhost".to_string(),
-        port: 0,
-        path: "/cattleya/view/login?targetUser=wakuden".to_string(),
-        relayInfo: "test".to_string(),
-    };
+    let relay = RelayConnectionInfo::new1(
+        "localhost",
+        0,
+        "/cattleya/view/login?targetUser=wakuden"
+    );
     assert_eq!("localhost", relay.get_address());
 }
 

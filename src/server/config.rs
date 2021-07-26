@@ -1,23 +1,22 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+use std::ptr::null;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use chrono::Local;
 
 use crate::http::http_status::HttpStatus;
+use crate::server::downstream::Downstream;
 use crate::server::http_request::HttpRequestInfo;
 use crate::server::upstream::Upstream;
-use crate::server::downstream::Downstream;
+use crate::server::http_response::Response;
 
 pub struct RoutingRule {
     name: String,
     routing_rule: fn(&ServerConfig, &HttpRequestInfo) -> Option<RelayConnectionInfo>,
 }
 
-trait Response {
-    fn response(&self, writer: &mut dyn Write) -> std::io::Result<()>;
-}
 
 pub struct RelayConnectionInfo {
     pub host: String,
@@ -28,18 +27,27 @@ pub struct RelayConnectionInfo {
 }
 
 impl RelayConnectionInfo {
-    pub fn new(host: String, port: i32, path: String) -> RelayConnectionInfo {
+    //
+    pub fn new1(host: &str, port: i32, path: &str) -> RelayConnectionInfo {
+        return RelayConnectionInfo::new2(host, port, path, "");
+    }
+    //
+    pub fn new2(host: &str, port: i32, path: &str, relayInfo: &str) -> RelayConnectionInfo {
+        return RelayConnectionInfo::new3(host, port, path, relayInfo, false);
+    }
+    //
+    pub fn new3(host: &str, port: i32, path: &str, relayInfo: &str, response: bool) -> RelayConnectionInfo {
         return RelayConnectionInfo {
-            host: "localhost".to_string(),
-            port: 8000,
+            host: host.to_string(),
+            port,
             path: path.to_string(),
-            relayInfo: None,
-            response: false,
+            relayInfo: if relayInfo.is_empty() { None } else { Some(relayInfo.to_string()) },
+            response,
         };
     }
-
+    //
     pub fn response(&self) -> String {
-        return "".to_String();
+        return "".to_string();
     }
 
     pub fn get_address(&self) -> String {
@@ -60,8 +68,8 @@ impl RelayConnectionInfo {
 }
 
 impl Response for RelayConnectionInfo {
-    fn response(&self, writer: &mut dyn Write) -> std::io::Result<()> {
-        let &relay = self;
+    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
+        let relay = self;
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //
         let b_relay = std::rc::Rc::new(relay).clone();
@@ -136,7 +144,7 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    pub fn route0(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(&self, request) {
@@ -146,7 +154,7 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn route2(&self, request: &HttpRequestInfo) -> Option<Response> {
+    pub fn route(&self, request: &HttpRequestInfo) -> Option<Box<Response>> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(&self, request) {
@@ -186,18 +194,23 @@ struct SetNumber {
 }
 
 impl Response for SetNumber {
-    fn response(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let status = HttpStatus::Ok;
         let code = status.get().unwrap();
         let string = status.get_as_string().unwrap();
         write!(writer, "HTTP/1.1 {} {}\r\n", code, string)?;
         write!(writer, "Date: {} \r\n", Local::now())?;
-        let buf = b"<html><body><h1>Set Number</h1><span>" + self.routing_number + "<span></body></html>";
-        let length = buf.len();
+        let buf1 = b"<html><body><h1>Set Number</h1>";
+        let buf2 =  format!( "<span>{}</span>", self.routing_number);
+        let buf2 = buf2.as_bytes();
+        let buf3 = b"</body></html>";
+        let length = buf1.len() + buf2.len() + buf3.len();
         write!(writer, "Content-Length: {}", length)?;
         write!(writer, "\r\n")?;
         write!(writer, "\r\n")?;
-        writer.write(buf)?;
+        writer.write(buf1)?;
+        writer.write(buf2)?;
+        writer.write(buf3)?;
         write!(writer, "\r\n")?;
         return Ok(());
     }
@@ -205,7 +218,7 @@ impl Response for SetNumber {
 
 
 impl Response for HttpResponse {
-    fn response(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let status = HttpStatus::NotFound;
         let code = status.get().unwrap();
         let string = status.get_as_string().unwrap();

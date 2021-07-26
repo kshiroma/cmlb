@@ -1,7 +1,12 @@
-use std::io::Read;
+use std::io::{BufRead, Read, Write};
 
 use crate::http::http_header::{HttpHeaderEntry, parse};
+use crate::server::http_request::HttpRequestInfo;
 use crate::io::read_line;
+
+pub trait Response {
+    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()>;
+}
 
 pub struct HttpResponseInfo {
     pub http_first_line: HttpResponseFirstLine,
