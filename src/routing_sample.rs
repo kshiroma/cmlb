@@ -24,7 +24,7 @@ fn set_routing_number(config: &ServerConfig, request: &HttpRequestInfo) -> Optio
         let number = request.http_first_line.uri.replace(path, "");
         let number = number.parse().unwrap();
         config.set_routing_number(number);
-        return Some(RelayConnectionInfo::new3("monami-self-response",0,"","set_routing_number",true));
+        return Some(RelayConnectionInfo::new3("monami-self-response", 0, "", "set_routing_number", true));
     }
     return None;
 }
@@ -66,7 +66,8 @@ fn routing(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConn
                         path,
                         "0_1")
                     )
-                },        }
+                },
+        }
     } else {
         None
     };
