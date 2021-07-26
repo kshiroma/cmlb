@@ -1,14 +1,16 @@
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::net::{Shutdown, TcpStream};
+use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::http::http_status::not_found;
+use crate::http::http_status::{not_found, set_routing_number};
+use crate::routing_sample::create_sample_config;
 use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
 use crate::server::http_request::read_http_request;
-use crate::server::upstream::Upstream;
 use crate::server::http_response::Response;
+use crate::server::upstream::Upstream;
 
 pub struct Worker {
     config: Arc<ServerConfig>,
@@ -37,20 +39,30 @@ impl Worker {
 
     fn handle_read_writer(&self, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let request = read_http_request(reader)?;
-        let relay: Option<Response> = self.config.route(&request);
+        let relay: Option<RelayConnectionInfo> = self.config.route(&request);
         if relay.is_none() {
             log::info!("not found relay connection {}", request.http_first_line.uri);
             not_found(writer).unwrap();
             return Ok(());
         }
-
-        self.config.add_count();
         let relay = relay.unwrap();
+        let response = relay.response;
+        {
+            //let relayInfo = &relay.relayInfo;
 
+            if response {
+                //if relayInfo.eq_ignore_ascii_case("set_routing_number") {
+                set_routing_number(writer, self.config.get_routing_number());
+                return Ok(());
+                //}
+            }
+        }
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //
+        self.config.add_count();
 
         let b_relay = std::rc::Rc::new(relay).clone();
+        let b_relay2 = b_relay.clone();
         let b_request = std::rc::Rc::new(request).clone();
         let mut upstream = Upstream::new(b_relay, b_request).unwrap();
 
@@ -65,7 +77,7 @@ impl Worker {
         let response_info = upstream.read_http_response_info().unwrap();
         log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
 
-        let downstream = Downstream::new(response_info);
+        let downstream = Downstream::new(b_relay2, response_info);
         log::trace!("let downstream = Downstream::new(response_info);");
         downstream.send_first_line(writer);
         log::trace!("downstream.sendFirstLine(writer);");

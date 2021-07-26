@@ -31,7 +31,7 @@ pub struct HttpRequestFirstLine {
 impl HttpRequestFirstLine {
     pub fn new(first_line: String) -> Self {
         let mut array = first_line.split_whitespace();
-
+        log::error!("{}",first_line);
         HttpRequestFirstLine {
             method: String::from(array.next().unwrap()),
             uri: String::from(array.next().unwrap()),

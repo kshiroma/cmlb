@@ -19,11 +19,12 @@ pub fn create_sample_config() -> ServerConfig {
 }
 
 fn set_routing_number(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
-    let path = "/set_routing_number";
+    let path = "/set_routing_number/";
     if (request.http_first_line.uri.starts_with(path)) {
         let number = request.http_first_line.uri.replace(path, "");
         let number = number.parse().unwrap();
         config.set_routing_number(number);
+        return Some(RelayConnectionInfo::new3("monami-self-response",0,"","set_routing_number",true));
     }
     return None;
 }
@@ -36,37 +37,36 @@ fn routing(config: &ServerConfig, request: &HttpRequestInfo) -> Option<RelayConn
         let n = config.get_routing_number();
         println!("connt {}", i);
         match n {
-            0 =>
+            1 =>
+                Some(RelayConnectionInfo::new2(
+                    "dev-jt0001",
+                    8000,
+                    path,
+                    "1__",
+                )),
+            2 =>
+                Some(RelayConnectionInfo::new2(
+                    "dev-jt0100",
+                    8000,
+                    path,
+                    "2__",
+                )),
+            _ =>
                 if i % 2 == 0 {
                     Some(RelayConnectionInfo::new2(
-                        "localhost",
+                        "dev-jt0001",
                         8000,
                         path,
                         "0_0",
                     ))
                 } else {
                     Some(RelayConnectionInfo::new2(
-                        "localhost",
+                        "dev-jt0100",
                         8000,
                         path,
                         "0_1")
                     )
-                },
-            1 =>
-                Some(RelayConnectionInfo::new2(
-                    "localhost",
-                    8000,
-                    path,
-                    "1__",
-                )),
-            _ =>
-                Some(RelayConnectionInfo::new2(
-                    "localhost",
-                    8000,
-                    path,
-                    "___")
-                )
-        }
+                },        }
     } else {
         None
     };
@@ -162,7 +162,7 @@ fn test_get_address() {
     let relay = RelayConnectionInfo::new1(
         "localhost",
         0,
-        "/cattleya/view/login?targetUser=wakuden"
+        "/cattleya/view/login?targetUser=wakuden",
     );
     assert_eq!("localhost", relay.get_address());
 }

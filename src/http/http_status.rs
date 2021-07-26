@@ -1,5 +1,6 @@
-use chrono::Local;
 use std::io::Write;
+
+use chrono::Local;
 
 pub struct HttpStatusEntry {
     code: i32,
@@ -48,7 +49,6 @@ impl HttpStatus {
 }
 
 
-
 pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     let status = HttpStatus::NotFound;
     let code = status.get().unwrap();
@@ -65,6 +65,21 @@ pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     return Ok(());
 }
 
+pub fn set_routing_number(writer: &mut dyn Write, number: i32) -> std::io::Result<()> {
+    let status = HttpStatus::Ok;
+    let code = status.get().unwrap();
+    let string = status.get_as_string().unwrap();
+    write!(writer, "HTTP/1.1 {} {}\r\n", code, string)?;
+    write!(writer, "Date: {} \r\n", Local::now())?;
+    let buf = format!("<html><body><h1>Routing Number</h1><span>{}</span></body></html>", number);
+    let length = buf.len();
+    write!(writer, "Content-Length: {}", length)?;
+    write!(writer, "\r\n")?;
+    write!(writer, "\r\n")?;
+    writer.write(buf.as_bytes())?;
+    write!(writer, "\r\n")?;
+    return Ok(());
+}
 
 #[test]
 fn test() {

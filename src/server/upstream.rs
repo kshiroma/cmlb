@@ -55,7 +55,8 @@ impl Upstream {
         let request = &a;
         let mut string = String::new();
         //Host
-        if self.relay.host.is_empty() == false {
+        let relay = self.relay.clone();
+        if relay.host.is_empty() == false {
             string.push_str("Host: ");
             string.push_str(request.http_request_header.host.as_str());
             string.push_str("\r\n");
@@ -79,6 +80,16 @@ impl Upstream {
             string.push_str(value);
             string.push_str("\r\n");
         }
+        //let relayInfo = &self.relay.relayInfo;
+        let a = relay.clone();
+        let a = &a.relayInfo;
+        a.into_iter().for_each(|a| {
+            string.push_str("X-MONAMI-RELAY-INFO");
+            string.push_str(": ");
+            string.push_str(a);
+            string.push_str("\r\n");
+        }
+        );
         string.push_str("\r\n");
         stream.write(string.as_bytes()).unwrap();
         log::trace!("end send header.")

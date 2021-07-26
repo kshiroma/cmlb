@@ -1,24 +1,28 @@
 use std::io::prelude::*;
+use std::rc::Rc;
 
+use crate::server::config::RelayConnectionInfo;
 use crate::server::http_response::HttpResponseInfo;
 
 //use std::borrow::Borrow;
 
 pub struct Downstream {
     response: HttpResponseInfo,
+    relay: Rc<RelayConnectionInfo>,
     //writer: Rc<Write>,
 }
 
 impl Downstream {
-    pub fn new(response: HttpResponseInfo) -> Self {
+    pub fn new(relay: Rc<RelayConnectionInfo>, response: HttpResponseInfo) -> Self {
         let downstream = Downstream {
-            response
+            response,
+            relay,
         };
         return downstream;
     }
 
     pub fn send_first_line(&self, writer: &mut dyn Write) {
-        let mut string =String::new();
+        let mut string = String::new();
         string.push_str(self.response.http_first_line.protocol_version.as_str());
         string.push_str(" ");
         string.push_str(self.response.http_first_line.http_status_code.to_string().as_str());
@@ -29,7 +33,7 @@ impl Downstream {
     }
 
     pub fn send_headers(&self, writer: &mut dyn Write) {
-        let mut string =String::new();
+        let mut string = String::new();
         //if self.response.http_response_header.keep_alive {}
         string.push_str("Connection: close");
         string.push_str("\r\n");
@@ -47,8 +51,27 @@ impl Downstream {
             string.push_str(value);
             string.push_str("\r\n");
         }
-        string.push_str("X-CMLB: cmlb");
+        string.push_str("X-MONAMI: monami");
         string.push_str("\r\n");
+        //let relayInfo = self.relay.relayInfo;
+        let relay = self.relay.clone();
+        let a = &relay.relayInfo;
+        a.into_iter().for_each(|b| {
+            string.push_str("X-MONAMI-RELAY-INFO");
+            string.push_str(": ");
+            string.push_str(b.as_str());
+            string.push_str("\r\n");
+        }
+        );
+        let address = relay.get_address();
+        a.into_iter().for_each(|b| {
+            string.push_str("X-MONAMI-UPSTREAM");
+            string.push_str(": ");
+            string.push_str(address.as_str());
+            string.push_str("\r\n");
+        }
+        );
+
 
         string.push_str("\r\n");
         writer.write(string.as_bytes()).unwrap();

@@ -9,8 +9,8 @@ use chrono::Local;
 use crate::http::http_status::HttpStatus;
 use crate::server::downstream::Downstream;
 use crate::server::http_request::HttpRequestInfo;
-use crate::server::upstream::Upstream;
 use crate::server::http_response::Response;
+use crate::server::upstream::Upstream;
 
 pub struct RoutingRule {
     name: String,
@@ -67,39 +67,39 @@ impl RelayConnectionInfo {
     }
 }
 
-impl Response for RelayConnectionInfo {
-    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
-        let relay = self;
-        log::info!("relay connection host is {}:{}", relay.host, relay.port);
-        //
-        let b_relay = std::rc::Rc::new(relay).clone();
-        let b_request = std::rc::Rc::new(request).clone();
-        let mut upstream = Upstream::new(b_relay, b_request).unwrap();
-
-        upstream.send_first_line();
-        log::trace!("upstream.sendFirstLine()");
-        upstream.send_headers();
-        log::trace!("upstream.sendHeader()");
-        upstream.send_body(reader);
-        log::trace!("upstream.sendBody(reader);");
-        upstream.flush();
-        log::trace!("upstream.flush();");
-        let response_info = upstream.read_http_response_info().unwrap();
-        log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
-
-        let downstream = Downstream::new(response_info);
-        log::trace!("let downstream = Downstream::new(response_info);");
-        downstream.send_first_line(writer);
-        log::trace!("downstream.sendFirstLine(writer);");
-        downstream.send_headers(writer);
-        log::trace!("downstream.sendHeaders(writer);");
-        downstream.send_body(&mut upstream.buf_reader, writer);
-        log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
-        writer.flush().unwrap();
-        log::trace!("writer.flush();");
-        return Ok(());
-    }
-}
+//impl Response for RelayConnectionInfo {
+//    fn response(self:Box<Self>, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
+//        //let relay = self;
+//        //log::info!("relay connection host is {}:{}", relay.host, relay.port);
+//        //
+//        //let b_relay = relay.clone();
+//        let b_request = Box::new(request);
+//        let mut upstream = Upstream::new(self, b_request).unwrap();
+//
+//        upstream.send_first_line();
+//        log::trace!("upstream.sendFirstLine()");
+//        upstream.send_headers();
+//        log::trace!("upstream.sendHeader()");
+//        upstream.send_body(reader);
+//        log::trace!("upstream.sendBody(reader);");
+//        upstream.flush();
+//        log::trace!("upstream.flush();");
+//        let response_info = upstream.read_http_response_info().unwrap();
+//        log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
+//
+//        let downstream = Downstream::new(response_info);
+//        log::trace!("let downstream = Downstream::new(response_info);");
+//        downstream.send_first_line(writer);
+//        log::trace!("downstream.sendFirstLine(writer);");
+//        downstream.send_headers(writer);
+//        log::trace!("downstream.sendHeaders(writer);");
+//        downstream.send_body(&mut upstream.buf_reader, writer);
+//        log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
+//        writer.flush().unwrap();
+//        log::trace!("writer.flush();");
+//        return Ok(());
+//    }
+//}
 
 impl RoutingRule {
     pub fn new(name: String, routing_rule: fn(&ServerConfig, &HttpRequestInfo) -> Option<RelayConnectionInfo>) -> Self {
@@ -127,7 +127,7 @@ impl ServerConfig {
         ServerConfig {
             routing_rules: vec,
             count: Mutex::new(0),
-            routing_number: Mutex::new(0),
+            routing_number: Mutex::new(1),
         }
     }
 
@@ -144,7 +144,7 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn route0(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+    pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(&self, request) {
@@ -154,15 +154,15 @@ impl ServerConfig {
         return None;
     }
 
-    pub fn route(&self, request: &HttpRequestInfo) -> Option<Box<Response>> {
-        for rule in self.routing_rules.iter() {
-            log::trace!("checking {}", rule.name);
-            if let Some(r) = (rule.routing_rule)(&self, request) {
-                return Some(r);
-            }
-        }
-        return None;
-    }
+//    pub fn route(&self, request: &HttpRequestInfo) -> Option<Box<Response>> {
+//        for rule in self.routing_rules.iter() {
+//            log::trace!("checking {}", rule.name);
+//            if let Some(r) = (rule.routing_rule)(&self, request) {
+//                return Some(Box::new(r));
+//            }
+//        }
+//        return None;
+//    }
 
     pub fn add_count(&self) -> i32 {
         let mut m = self.count.lock().unwrap();
@@ -171,7 +171,7 @@ impl ServerConfig {
     }
 
     pub fn get_count(&self) -> i32 {
-        let m = self.routing_number.lock().unwrap();
+        let m = self.count.lock().unwrap();
         return *m;
     }
     pub fn set_routing_number(&self, number: i32) -> i32 {
@@ -194,14 +194,14 @@ struct SetNumber {
 }
 
 impl Response for SetNumber {
-    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn response(self:Box<Self>, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let status = HttpStatus::Ok;
         let code = status.get().unwrap();
         let string = status.get_as_string().unwrap();
         write!(writer, "HTTP/1.1 {} {}\r\n", code, string)?;
         write!(writer, "Date: {} \r\n", Local::now())?;
         let buf1 = b"<html><body><h1>Set Number</h1>";
-        let buf2 =  format!( "<span>{}</span>", self.routing_number);
+        let buf2 = format!("<span>{}</span>", self.routing_number);
         let buf2 = buf2.as_bytes();
         let buf3 = b"</body></html>";
         let length = buf1.len() + buf2.len() + buf3.len();
@@ -218,7 +218,7 @@ impl Response for SetNumber {
 
 
 impl Response for HttpResponse {
-    fn response(self, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
+    fn response(self:Box<Self>, request: HttpRequestInfo, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let status = HttpStatus::NotFound;
         let code = status.get().unwrap();
         let string = status.get_as_string().unwrap();

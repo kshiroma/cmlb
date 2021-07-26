@@ -1,5 +1,5 @@
 [package]
-name = "http_server"
+name = "monami"
 version = "0.1.0"
 authors = ["kshiroma <shiroma@cam-net.co.jp>"]
 edition = "2018"
