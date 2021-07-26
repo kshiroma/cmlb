@@ -36,7 +36,7 @@ impl Worker {
 
     fn handle_read_writer(&self, reader: &mut dyn BufRead, writer: &mut dyn Write) -> std::io::Result<()> {
         let request = read_http_request(reader)?;
-        let relay: Option<RelayConnectionInfo> = self.config.route(&request);
+        let relay: Option<Response> = self.config.route(&request);
         if relay.is_none() {
             log::info!("not found relay connection {}", request.http_first_line.uri);
             not_found(writer).unwrap();
@@ -45,8 +45,10 @@ impl Worker {
 
         self.config.add_count();
         let relay = relay.unwrap();
+
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //
+
         let b_relay = std::rc::Rc::new(relay).clone();
         let b_request = std::rc::Rc::new(request).clone();
         let mut upstream = Upstream::new(b_relay, b_request).unwrap();

@@ -7,6 +7,8 @@ use chrono::Local;
 
 use crate::http::http_status::HttpStatus;
 use crate::server::http_request::HttpRequestInfo;
+use crate::server::upstream::Upstream;
+use crate::server::downstream::Downstream;
 
 pub struct RoutingRule {
     name: String,
@@ -26,7 +28,7 @@ pub struct RelayConnectionInfo {
 }
 
 impl RelayConnectionInfo {
-    pub fn new(host: String, port: i32, path: String, relayInfo: String ="___") -> RelayConnectionInfo {
+    pub fn new(host: String, port: i32, path: String) -> RelayConnectionInfo {
         return RelayConnectionInfo {
             host: "localhost".to_string(),
             port: 8000,
@@ -54,6 +56,40 @@ impl RelayConnectionInfo {
     pub fn connect_relay(&self) -> std::io::Result<TcpStream> {
         let host = self.get_address();
         return std::net::TcpStream::connect(host);
+    }
+}
+
+impl Response for RelayConnectionInfo {
+    fn response(&self, writer: &mut dyn Write) -> std::io::Result<()> {
+        let &relay = self;
+        log::info!("relay connection host is {}:{}", relay.host, relay.port);
+        //
+        let b_relay = std::rc::Rc::new(relay).clone();
+        let b_request = std::rc::Rc::new(request).clone();
+        let mut upstream = Upstream::new(b_relay, b_request).unwrap();
+
+        upstream.send_first_line();
+        log::trace!("upstream.sendFirstLine()");
+        upstream.send_headers();
+        log::trace!("upstream.sendHeader()");
+        upstream.send_body(reader);
+        log::trace!("upstream.sendBody(reader);");
+        upstream.flush();
+        log::trace!("upstream.flush();");
+        let response_info = upstream.read_http_response_info().unwrap();
+        log::trace!("let response_info = upstream.read_http_response_info().unwrap();");
+
+        let downstream = Downstream::new(response_info);
+        log::trace!("let downstream = Downstream::new(response_info);");
+        downstream.send_first_line(writer);
+        log::trace!("downstream.sendFirstLine(writer);");
+        downstream.send_headers(writer);
+        log::trace!("downstream.sendHeaders(writer);");
+        downstream.send_body(&mut upstream.buf_reader, writer);
+        log::trace!("downstream.sendBody(&mut upstream.stream, writer);");
+        writer.flush().unwrap();
+        log::trace!("writer.flush();");
+        return Ok(());
     }
 }
 
@@ -101,6 +137,16 @@ impl ServerConfig {
     }
 
     pub fn route(&self, request: &HttpRequestInfo) -> Option<RelayConnectionInfo> {
+        for rule in self.routing_rules.iter() {
+            log::trace!("checking {}", rule.name);
+            if let Some(r) = (rule.routing_rule)(&self, request) {
+                return Some(r);
+            }
+        }
+        return None;
+    }
+
+    pub fn route2(&self, request: &HttpRequestInfo) -> Option<Response> {
         for rule in self.routing_rules.iter() {
             log::trace!("checking {}", rule.name);
             if let Some(r) = (rule.routing_rule)(&self, request) {
