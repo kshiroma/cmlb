@@ -31,11 +31,17 @@ pub struct HttpRequestFirstLine {
 impl HttpRequestFirstLine {
     pub fn new(first_line: String) -> Self {
         let mut array = first_line.split_whitespace();
-        log::error!("{}",first_line);
+        let method = array.next();
+        let uri = array.next();
+        let protoco_version = array.next();
+        if method.is_none() || uri.is_none() || protoco_version.is_none() {
+            log::error!("first line {}",first_line);
+        }
+
         HttpRequestFirstLine {
-            method: String::from(array.next().unwrap()),
-            uri: String::from(array.next().unwrap()),
-            protool_version: String::from(array.next().unwrap()),
+            method: String::from(method.unwrap()),
+            uri: String::from(uri.unwrap()),
+            protool_version: String::from(protoco_version.unwrap()),
             request: first_line,
         }
     }
