@@ -65,6 +65,23 @@ pub fn not_found(writer: &mut dyn Write) -> std::io::Result<()> {
     return Ok(());
 }
 
+pub fn service_unavailable(writer: &mut dyn Write) -> std::io::Result<()> {
+    let status = HttpStatus::ServiceUnavailable;
+    let code = status.get().unwrap();
+    let string = status.get_as_string().unwrap();
+    write!(writer, "HTTP/1.1 {} {}\r\n", code, string)?;
+    write!(writer, "Date: {} \r\n", Local::now())?;
+    write!(writer, "Connection: close \r\n", )?;
+    let buf = b"<html><body><h1>Service Unavailable</h1></body></html>";
+    let length = buf.len();
+    write!(writer, "Content-Length: {}", length)?;
+    write!(writer, "\r\n")?;
+    write!(writer, "\r\n")?;
+    writer.write(buf)?;
+    write!(writer, "\r\n")?;
+    return Ok(());
+}
+
 pub fn set_routing_number(writer: &mut dyn Write, number: i32) -> std::io::Result<()> {
     let status = HttpStatus::Ok;
     let code = status.get().unwrap();

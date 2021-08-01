@@ -4,7 +4,7 @@ use std::net::{Shutdown, TcpStream};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::http::http_status::{not_found, set_routing_number};
+use crate::http::http_status::{not_found, set_routing_number, service_unavailable};
 use crate::routing_sample::create_sample_config;
 use crate::server::config::{RelayConnectionInfo, ServerConfig};
 use crate::server::downstream::Downstream;
@@ -59,12 +59,18 @@ impl Worker {
         }
         log::info!("relay connection host is {}:{}", relay.host, relay.port);
         //
-        self.config.add_count();
-
         let b_relay = std::rc::Rc::new(relay).clone();
         let b_relay2 = b_relay.clone();
         let b_request = std::rc::Rc::new(request).clone();
-        let mut upstream = Upstream::new(b_relay, b_request).unwrap();
+        let upstreamOp = Upstream::new(b_relay, b_request);
+        if (upstreamOp.is_none()) {
+            log::info!("can not connect upstream {}", b_relay2.host);
+            service_unavailable(writer).unwrap();
+            return Ok(());
+        }
+
+        self.config.add_count();
+        let mut upstream = upstreamOp.unwrap();
 
         upstream.send_first_line();
         log::trace!("upstream.sendFirstLine()");
